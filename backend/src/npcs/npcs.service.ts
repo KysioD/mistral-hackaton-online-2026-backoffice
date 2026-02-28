@@ -1,6 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNpcDto, UpdateNpcDto, TalkDto } from './dto/npc.dto';
+import { ChatMistralAI } from "@langchain/mistralai";
+import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
 
 @Injectable()
 export class NpcsService {
@@ -168,13 +170,17 @@ export class NpcsService {
     });
   }
 
-  async talk(id: string, talkDto: TalkDto) {
+  async talk(id: string, talkDto: TalkDto, res?: any) {
     const npc = await this.prisma.npc.findUniqueOrThrow({
       where: { id },
       include: {
         tools: {
           include: {
-            tool: true,
+            tool: {
+              include: {
+                parameters: true,
+              },
+            },
           },
         },
       },
@@ -228,26 +234,80 @@ export class NpcsService {
 
     history.push(userMessage);
 
-    let suggestedAction: any = null;
-
     // Load available tools for the llm later
     const availableTools = npc.tools.map(t => t.tool);
 
-    // We can simulate an action happening alongside speech
-    // We always mock a suggested action if the NPC has tools for testing purposes.
-    if (npc.tools && npc.tools.length > 0) {
-      const randomNpcTool =
-        npc.tools[Math.floor(Math.random() * npc.tools.length)];
-      const randomTool = randomNpcTool.tool;
-      suggestedAction = {
-        tool: randomTool.name,
-        parameters: {},
-      };
+    const mistralTools = availableTools.map((t) => ({
+      type: 'function',
+      function: {
+        name: t.name,
+        description: t.description || "",
+        parameters: {
+          type: 'object',
+          properties: t.parameters.reduce((acc: any, param) => {
+            acc[param.name] = {
+              type: 'string', // Assuming strings
+              description: param.description || "",
+            };
+            return acc;
+          }, {} as any),
+          required: t.parameters.filter((p) => p.required).map((p) => p.name),
+        },
+      },
+    }));
+
+    let model = new ChatMistralAI({
+      model: 'ministral-8b-latest',
+      temperature: 0.7,
+    });
+
+    // Bind tools if there are any
+    if (mistralTools.length > 0) {
+      model = model.bindTools(mistralTools) as any;
     }
 
-    const responseContent =
-      `Hello! I am ${npc.firstName}. You said: "${talkDto.message}". ` +
-      (suggestedAction ? 'I am also triggering an action.' : '');
+    const lcMessages = history.map((msg) => {
+      if (msg.role === 'SYSTEM') return new SystemMessage(msg.content);
+      if (msg.role === 'USER') return new HumanMessage(msg.content);
+      if (msg.role === 'ASSISTANT') {
+        const mc = new AIMessage(msg.content);
+        // Note: keeping simple for now, no need to include tool calls in history unless desired
+        return mc;
+      }
+      return new HumanMessage(msg.content); // fallback
+    });
+
+    const stream = await model.stream(lcMessages);
+
+    let finalMsg: any = null;
+    let responseContent = "";
+
+    for await (const chunk of stream) {
+      if (!finalMsg) {
+        finalMsg = chunk;
+      } else {
+        finalMsg = finalMsg.concat(chunk);
+      }
+      
+      if (chunk.content) {
+        responseContent += chunk.content;
+        if (res) {
+          res.write(JSON.stringify({ type: 'text', content: chunk.content }) + '\n');
+        }
+      }
+    }
+
+    let suggestedAction: any = null;
+    if (finalMsg && finalMsg.tool_calls && finalMsg.tool_calls.length > 0) {
+      const tc = finalMsg.tool_calls[0];
+      suggestedAction = {
+        tool: tc.name,
+        parameters: tc.args,
+      };
+      if (res) {
+        res.write(JSON.stringify({ type: 'tool_call', ...suggestedAction }) + '\n');
+      }
+    }
 
     const assistantMessage = await this.prisma.message.create({
       data: {
@@ -265,6 +325,10 @@ export class NpcsService {
       where: { id: sessionId },
       data: { endedAt: new Date() },
     });
+
+    if (res) {
+      res.write(JSON.stringify({ type: 'done', sessionId, message: assistantMessage }) + '\n');
+    }
 
     return {
       message: assistantMessage,

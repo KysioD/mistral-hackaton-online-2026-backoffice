@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { NpcsService } from './npcs.service';
@@ -83,9 +84,21 @@ export class NpcsController {
   @Post(':id/talk')
   @ApiOperation({ summary: 'Talk to an NPC' })
   @ApiParam({ name: 'id', description: 'NPC ID' })
-  @ApiResponse({ status: 200, description: 'Return the NPC response.' })
+  @ApiResponse({ status: 200, description: 'Stream the NPC response.' })
   @ApiResponse({ status: 404, description: 'NPC not found.' })
-  talk(@Param('id') id: string, @Body() talkDto: TalkDto) {
-    return this.npcsService.talk(id, talkDto);
+  async talk(@Param('id') id: string, @Body() talkDto: TalkDto, @Res() res: any) {
+    res.setHeader('Content-Type', 'application/x-ndjson');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    try {
+      await this.npcsService.talk(id, talkDto, res);
+      res.end();
+    } catch (error: any) {
+      if (!res.headersSent) {
+        res.status(error.status || 500).json({ message: error.message });
+      } else {
+        res.write(JSON.stringify({ type: 'error', message: error.message }) + '\n');
+        res.end();
+      }
+    }
   }
 }
