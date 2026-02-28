@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import {
   Pagination,
@@ -26,6 +27,7 @@ export function SystemPromptsTab() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<SystemPrompt | null>(null);
+  const [promptToDelete, setPromptToDelete] = useState<SystemPrompt | null>(null);
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
@@ -99,6 +101,28 @@ export function SystemPromptsTab() {
 
   return (
     <div className="space-y-4 flex flex-col h-full">
+      <AlertDialog open={!!promptToDelete} onOpenChange={(open) => !open && setPromptToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the system prompt &quot;{promptToDelete?.name}&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (promptToDelete) deleteMutation.mutate(promptToDelete.id);
+                setPromptToDelete(null);
+            }}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex justify-between items-center shrink-0">
         <h2 className="text-2xl font-bold tracking-tight">Global Prompts</h2>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -165,11 +189,9 @@ export function SystemPromptsTab() {
                       </Button>
                     )}
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(prompt)}><Edit2 className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => {
-                        if (confirm("Are you sure you want to delete this prompt?")) {
-                          deleteMutation.mutate(prompt.id);
-                        }
-                    }}><Trash2 className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setPromptToDelete(prompt)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

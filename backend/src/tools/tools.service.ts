@@ -40,7 +40,12 @@ export class ToolsService {
       ? {
           OR: [
             { name: { contains: params.search, mode: 'insensitive' as const } },
-            { description: { contains: params.search, mode: 'insensitive' as const } },
+            {
+              description: {
+                contains: params.search,
+                mode: 'insensitive' as const,
+              },
+            },
           ],
         }
       : {};

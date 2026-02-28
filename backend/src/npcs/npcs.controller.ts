@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { NpcsService } from './npcs.service';
-import { CreateNpcDto, UpdateNpcDto } from './dto/npc.dto';
+import { CreateNpcDto, UpdateNpcDto, TalkDto } from './dto/npc.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { NpcEntity, PaginatedNpcsEntity } from './entities/npc.entity';
 
@@ -23,7 +23,11 @@ export class NpcsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new NPC' })
-  @ApiResponse({ status: 201, description: 'The NPC has been successfully created.', type: NpcEntity })
+  @ApiResponse({
+    status: 201,
+    description: 'The NPC has been successfully created.',
+    type: NpcEntity,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   create(@Body() createNpcDto: CreateNpcDto) {
     return this.npcsService.create(createNpcDto);
@@ -31,7 +35,11 @@ export class NpcsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all NPCs with pagination' })
-  @ApiResponse({ status: 200, description: 'Return all NPCs.', type: PaginatedNpcsEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all NPCs.',
+    type: PaginatedNpcsEntity,
+  })
   findAll(@Query() query: PaginationDto) {
     return this.npcsService.findAll(query.page, query.perPage, query.search);
   }
@@ -48,7 +56,11 @@ export class NpcsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update an NPC by ID' })
   @ApiParam({ name: 'id', description: 'NPC ID' })
-  @ApiResponse({ status: 200, description: 'The NPC has been successfully updated.', type: NpcEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'The NPC has been successfully updated.',
+    type: NpcEntity,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 404, description: 'NPC not found.' })
   update(@Param('id') id: string, @Body() updateNpcDto: UpdateNpcDto) {
@@ -59,10 +71,21 @@ export class NpcsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an NPC by ID' })
   @ApiParam({ name: 'id', description: 'NPC ID' })
-  @ApiResponse({ status: 204, description: 'The NPC has been successfully deleted.' })
+  @ApiResponse({
+    status: 204,
+    description: 'The NPC has been successfully deleted.',
+  })
   @ApiResponse({ status: 404, description: 'NPC not found.' })
   remove(@Param('id') id: string) {
     return this.npcsService.remove(id);
   }
-}
 
+  @Post(':id/talk')
+  @ApiOperation({ summary: 'Talk to an NPC' })
+  @ApiParam({ name: 'id', description: 'NPC ID' })
+  @ApiResponse({ status: 200, description: 'Return the NPC response.' })
+  @ApiResponse({ status: 404, description: 'NPC not found.' })
+  talk(@Param('id') id: string, @Body() talkDto: TalkDto) {
+    return this.npcsService.talk(id, talkDto);
+  }
+}

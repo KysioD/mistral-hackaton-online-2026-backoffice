@@ -15,6 +15,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useDebounce } from "@/hooks/use-debounce";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Copy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -147,6 +149,7 @@ export function NpcsTab() {
   const debouncedSearch = useDebounce(search, 500);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNpc, setEditingNpc] = useState<Npc | null>(null);
+  const [npcToDelete, setNpcToDelete] = useState<Npc | null>(null);
   
   // Pagination & Popover
   const [page, setPage] = useState(1);
@@ -227,6 +230,28 @@ export function NpcsTab() {
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 space-y-4">
+      <AlertDialog open={!!npcToDelete} onOpenChange={(open) => !open && setNpcToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete {npcToDelete?.firstName} and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (npcToDelete) deleteMutation.mutate(npcToDelete.id);
+                setNpcToDelete(null);
+            }}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Create tool dialog sits totally independent of everything else */}
       <CreateToolDialog 
         open={isToolDialogOpen} 
@@ -436,6 +461,7 @@ export function NpcsTab() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>First Name</TableHead>
                 <TableHead>Last Name</TableHead>
                 <TableHead>Prefab</TableHead>
@@ -447,6 +473,18 @@ export function NpcsTab() {
             <TableBody>
               {data?.data?.map((npc) => (
                 <TableRow key={npc.id}>
+                  <TableCell>
+                    <div 
+                      className="flex items-center gap-2 cursor-pointer text-xs font-mono text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => {
+                        navigator.clipboard.writeText(npc.id);
+                        toast({ title: "Copied!", description: "NPC ID copied to clipboard." });
+                      }}
+                      title="Click to copy ID"
+                    >
+                      {npc.id.slice(0, 8)}... <Copy className="h-3 w-3" />
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium">{npc.firstName}</TableCell>
                   <TableCell>{npc.lastName}</TableCell>
                   <TableCell><Badge variant="outline">{npc.prefab}</Badge></TableCell>
@@ -461,13 +499,13 @@ export function NpcsTab() {
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(npc)}><Edit2 className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => {
-                          if (confirm(`Delete ${npc.firstName}?`)) deleteMutation.mutate(npc.id);
-                    }}><Trash2 className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setNpcToDelete(npc)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
-              {data?.data?.length === 0 && <TableRow><TableCell colSpan={6} className="h-24 text-center">No NPCs found.</TableCell></TableRow>}
+              {data?.data?.length === 0 && <TableRow><TableCell colSpan={7} className="h-24 text-center">No NPCs found.</TableCell></TableRow>}
             </TableBody>
           </Table>
         </div>

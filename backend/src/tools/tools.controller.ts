@@ -23,16 +23,27 @@ export class ToolsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new tool' })
-  @ApiResponse({ status: 201, description: 'The tool has been successfully created.', type: ToolEntity })
+  @ApiResponse({
+    status: 201,
+    description: 'The tool has been successfully created.',
+    type: ToolEntity,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  @ApiResponse({ status: 409, description: 'Conflict. Tool name must be unique.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict. Tool name must be unique.',
+  })
   create(@Body() createToolDto: CreateToolDto) {
     return this.toolsService.create(createToolDto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all tools with pagination' })
-  @ApiResponse({ status: 200, description: 'Return all tools.', type: PaginatedToolsEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all tools.',
+    type: PaginatedToolsEntity,
+  })
   findAll(@Query() query: PaginationDto) {
     return this.toolsService.findAll({
       page: query.page,
@@ -44,7 +55,11 @@ export class ToolsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific tool by ID' })
   @ApiParam({ name: 'id', description: 'Tool ID' })
-  @ApiResponse({ status: 200, description: 'Return the tool.', type: ToolEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'Return the tool.',
+    type: ToolEntity,
+  })
   @ApiResponse({ status: 404, description: 'Tool not found.' })
   findOne(@Param('id') id: string) {
     return this.toolsService.findOne(id);
@@ -53,10 +68,17 @@ export class ToolsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update a tool by ID' })
   @ApiParam({ name: 'id', description: 'Tool ID' })
-  @ApiResponse({ status: 200, description: 'The tool has been successfully updated.', type: ToolEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'The tool has been successfully updated.',
+    type: ToolEntity,
+  })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 404, description: 'Tool not found.' })
-  @ApiResponse({ status: 409, description: 'Conflict. Tool name must be unique.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict. Tool name must be unique.',
+  })
   update(@Param('id') id: string, @Body() updateToolDto: UpdateToolDto) {
     return this.toolsService.update(id, updateToolDto);
   }
@@ -65,10 +87,12 @@ export class ToolsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a tool by ID' })
   @ApiParam({ name: 'id', description: 'Tool ID' })
-  @ApiResponse({ status: 204, description: 'The tool has been successfully deleted.' })
+  @ApiResponse({
+    status: 204,
+    description: 'The tool has been successfully deleted.',
+  })
   @ApiResponse({ status: 404, description: 'Tool not found.' })
   remove(@Param('id') id: string) {
     return this.toolsService.remove(id);
   }
 }
-

@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateNpcDto, UpdateNpcDto } from './dto/npc.dto';
+import { CreateNpcDto, UpdateNpcDto, TalkDto } from './dto/npc.dto';
 
 @Injectable()
 export class NpcsService {
@@ -14,16 +14,20 @@ export class NpcsService {
     if (toolNames && toolNames.length > 0) {
       const existingTools = await this.prisma.tool.findMany({
         where: { name: { in: toolNames } },
-        select: { id: true, name: true }
+        select: { id: true, name: true },
       });
-      
-      const existingToolNames = existingTools.map(t => t.name);
-      validToolIds = existingTools.map(t => t.id);
-      
-      const invalidToolNames = toolNames.filter(name => !existingToolNames.includes(name));
-      
+
+      const existingToolNames = existingTools.map((t) => t.name);
+      validToolIds = existingTools.map((t) => t.id);
+
+      const invalidToolNames = toolNames.filter(
+        (name) => !existingToolNames.includes(name),
+      );
+
       if (invalidToolNames.length > 0) {
-        throw new BadRequestException(`Tools with names [${invalidToolNames.join(', ')}] do not exist`);
+        throw new BadRequestException(
+          `Tools with names [${invalidToolNames.join(', ')}] do not exist`,
+        );
       }
     }
 
@@ -112,16 +116,20 @@ export class NpcsService {
     if (toolNames !== undefined && toolNames.length > 0) {
       const existingTools = await this.prisma.tool.findMany({
         where: { name: { in: toolNames } },
-        select: { id: true, name: true }
+        select: { id: true, name: true },
       });
-      
-      const existingToolNames = existingTools.map(t => t.name);
-      validToolIds = existingTools.map(t => t.id);
-      
-      const invalidToolNames = toolNames.filter(t => !existingToolNames.includes(t));
-      
+
+      const existingToolNames = existingTools.map((t) => t.name);
+      validToolIds = existingTools.map((t) => t.id);
+
+      const invalidToolNames = toolNames.filter(
+        (t) => !existingToolNames.includes(t),
+      );
+
       if (invalidToolNames.length > 0) {
-        throw new BadRequestException(`Tools with names [${invalidToolNames.join(', ')}] do not exist`);
+        throw new BadRequestException(
+          `Tools with names [${invalidToolNames.join(', ')}] do not exist`,
+        );
       }
     }
 
@@ -158,5 +166,110 @@ export class NpcsService {
     return this.prisma.npc.delete({
       where: { id },
     });
+  }
+
+  async talk(id: string, talkDto: TalkDto) {
+    const npc = await this.prisma.npc.findUniqueOrThrow({
+      where: { id },
+      include: {
+        tools: {
+          include: {
+            tool: true,
+          },
+        },
+      },
+    });
+
+    let sessionId = talkDto.sessionId;
+    let history: any[] = [];
+
+    if (!sessionId) {
+      const session = await this.prisma.session.create({
+        data: {
+          npcId: id,
+        },
+      });
+      sessionId = session.id;
+
+      // Create system prompt message
+      const activeSystemPrompt = await this.prisma.systemPrompt.findFirst({
+        where: { active: true },
+      });
+
+      const systemPromptContent = `${activeSystemPrompt?.content || ''}\n\nCharacter Prompt:\n${npc.characterPrompt}`.trim();
+
+      const systemMessage = await this.prisma.message.create({
+        data: {
+          sessionId,
+          role: 'SYSTEM',
+          content: systemPromptContent,
+        },
+      });
+      history.push(systemMessage);
+    } else {
+      const existingSession = await this.prisma.session.findUnique({
+        where: { id: sessionId },
+        include: { messages: true },
+      });
+      if (!existingSession || existingSession.npcId !== id) {
+        throw new BadRequestException('Invalid session ID for this NPC');
+      }
+      history = existingSession.messages;
+    }
+
+    // Save the user message
+    const userMessage = await this.prisma.message.create({
+      data: {
+        sessionId,
+        role: 'USER',
+        content: talkDto.message,
+      },
+    });
+
+    history.push(userMessage);
+
+    let suggestedAction: any = null;
+
+    // Load available tools for the llm later
+    const availableTools = npc.tools.map(t => t.tool);
+
+    // We can simulate an action happening alongside speech
+    // We always mock a suggested action if the NPC has tools for testing purposes.
+    if (npc.tools && npc.tools.length > 0) {
+      const randomNpcTool =
+        npc.tools[Math.floor(Math.random() * npc.tools.length)];
+      const randomTool = randomNpcTool.tool;
+      suggestedAction = {
+        tool: randomTool.name,
+        parameters: {},
+      };
+    }
+
+    const responseContent =
+      `Hello! I am ${npc.firstName}. You said: "${talkDto.message}". ` +
+      (suggestedAction ? 'I am also triggering an action.' : '');
+
+    const assistantMessage = await this.prisma.message.create({
+      data: {
+        sessionId,
+        role: 'ASSISTANT',
+        content: responseContent,
+        suggestedAction: suggestedAction ? suggestedAction : undefined,
+      },
+    });
+
+    history.push(assistantMessage);
+
+    // Update the session's endedAt timestamp
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { endedAt: new Date() },
+    });
+
+    return {
+      message: assistantMessage,
+      sessionId,
+      history,
+    };
   }
 }

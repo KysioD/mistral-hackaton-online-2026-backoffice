@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Edit2, Wrench } from "lucide-react";
 import { useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -42,6 +43,7 @@ export function ToolsTab() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<Tool | null>(null);
+  const [toolToDelete, setToolToDelete] = useState<Tool | null>(null);
   const [page, setPage] = useState(1);
 
   const { data } = useQuery({ queryKey: ["tools", page], queryFn: () => getTools(page) });
@@ -100,6 +102,28 @@ export function ToolsTab() {
 
   return (
     <div className="space-y-4 flex flex-col h-full">
+      <AlertDialog open={!!toolToDelete} onOpenChange={(open) => !open && setToolToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the tool &quot;{toolToDelete?.name}&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (toolToDelete) deleteMutation.mutate(toolToDelete.id);
+                setToolToDelete(null);
+            }}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex justify-between items-center shrink-0">
         <h2 className="text-2xl font-bold tracking-tight">Tools</h2>
         <Dialog open={isDialogOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsDialogOpen(open); }}>
@@ -192,9 +216,9 @@ export function ToolsTab() {
                 <TableCell>{tool.parameters?.length || 0}</TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button variant="ghost" size="icon" onClick={() => handleEdit(tool)}><Edit2 className="h-4 w-4" /></Button>
-                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => {
-                        if (confirm(`Delete tool ${tool.name}?`)) deleteMutation.mutate(tool.id);
-                  }}><Trash2 className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setToolToDelete(tool)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
