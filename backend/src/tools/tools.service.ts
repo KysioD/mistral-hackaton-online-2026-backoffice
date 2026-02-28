@@ -31,19 +31,29 @@ export class ToolsService {
     });
   }
 
-  async findAll(params: { page?: number; perPage?: number }) {
+  async findAll(params: { page?: number; perPage?: number; search?: string }) {
     const page = params.page || 1;
     const perPage = params.perPage || 10;
     const skip = (page - 1) * perPage;
 
+    const where = params.search
+      ? {
+          OR: [
+            { name: { contains: params.search, mode: 'insensitive' as const } },
+            { description: { contains: params.search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
     const [data, total] = await Promise.all([
       this.prisma.tool.findMany({
+        where,
         skip,
         take: perPage,
         orderBy: { createdAt: 'desc' },
         include: { parameters: true },
       }),
-      this.prisma.tool.count(),
+      this.prisma.tool.count({ where }),
     ]);
 
     return {
