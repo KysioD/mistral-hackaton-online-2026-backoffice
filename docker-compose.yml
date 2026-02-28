@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: mistral-db
+    environment:
+      POSTGRES_USER: prisma
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mistral_backoffice_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      - mistral-network
+
+  # backend:
+  #   build:
+  #     context: ./backend
+  #   container_name: mistral-backend
+  #   environment:
+  #     DATABASE_URL: "postgresql://prisma:password@postgres:5432/mistral_backoffice_db?schema=public"
+  #   ports:
+  #     - '3001:3000'
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - mistral-network
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #   container_name: mistral-frontend
+  #   ports:
+  #     - '3000:3000'
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: http://localhost:3001
+  #   networks:
+  #     - mistral-network
+
+volumes:
+  postgres-data:
+
+networks:
+  mistral-network:
+    driver: bridge
