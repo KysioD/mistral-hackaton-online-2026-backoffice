@@ -1,23 +1,47 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateToolDto, UpdateToolDto } from './dto/tool.dto';
 
 @Injectable()
 export class ToolsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: { name: string; description: string }) {
+  async create(data: CreateToolDto) {
+    const { parameters, ...toolData } = data;
+
+    const existing = await this.prisma.tool.findUnique({
+      where: { name: toolData.name },
+    });
+    if (existing) throw new ConflictException('Tool name must be unique');
+
     return this.prisma.tool.create({
-      data,
+      data: {
+        ...toolData,
+        parameters: parameters
+          ? {
+              create: parameters,
+            }
+          : undefined,
+      },
+      include: { parameters: true },
     });
   }
 
-  async findAll(params: { skip?: number; take?: number }) {
-    const { skip, take } = params;
+  async findAll(params: { page?: number; perPage?: number }) {
+    const page = params.page || 1;
+    const perPage = params.perPage || 10;
+    const skip = (page - 1) * perPage;
+
     const [data, total] = await Promise.all([
       this.prisma.tool.findMany({
         skip,
-        take,
+        take: perPage,
         orderBy: { createdAt: 'desc' },
+        include: { parameters: true },
       }),
       this.prisma.tool.count(),
     ]);
@@ -26,8 +50,9 @@ export class ToolsService {
       data,
       meta: {
         total,
-        skip,
-        take,
+        page,
+        perPage,
+        lastPage: Math.ceil(total / perPage),
       },
     };
   }
@@ -35,15 +60,36 @@ export class ToolsService {
   async findOne(id: string) {
     const tool = await this.prisma.tool.findUnique({
       where: { id },
+      include: { parameters: true },
     });
     if (!tool) throw new NotFoundException('Tool not found');
     return tool;
   }
 
-  async update(id: string, data: { name?: string; description?: string }) {
+  async update(id: string, data: UpdateToolDto) {
+    const { parameters, ...toolData } = data;
+
+    if (toolData.name) {
+      const existing = await this.prisma.tool.findUnique({
+        where: { name: toolData.name },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException('Tool name must be unique');
+      }
+    }
+
     return this.prisma.tool.update({
       where: { id },
-      data,
+      data: {
+        ...toolData,
+        parameters: parameters
+          ? {
+              deleteMany: {},
+              create: parameters,
+            }
+          : undefined,
+      },
+      include: { parameters: true },
     });
   }
 

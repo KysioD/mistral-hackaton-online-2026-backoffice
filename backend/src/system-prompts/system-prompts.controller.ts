@@ -1,20 +1,38 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { SystemPromptsService } from './system-prompts.service';
+import {
+  CreateSystemPromptDto,
+  UpdateSystemPromptDto,
+} from './dto/system-prompt.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
+@ApiTags('System Prompts')
 @Controller('system-prompts')
 export class SystemPromptsController {
   constructor(private readonly systemPromptsService: SystemPromptsService) {}
 
   @Post()
-  create(@Body() createSystemPromptDto: { name: string; content: string }) {
+  create(@Body() createSystemPromptDto: CreateSystemPromptDto) {
     return this.systemPromptsService.create(createSystemPromptDto);
   }
 
   @Get()
-  findAll(@Query('skip') skip?: string, @Query('take') take?: string) {
+  findAll(@Query() query: PaginationDto) {
     return this.systemPromptsService.findAll({
-      skip: skip ? parseInt(skip, 10) : 0,
-      take: take ? parseInt(take, 10) : 20,
+      page: query.page,
+      perPage: query.perPage,
     });
   }
 
@@ -24,11 +42,15 @@ export class SystemPromptsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSystemPromptDto: { name?: string; content?: string }) {
+  update(
+    @Param('id') id: string,
+    @Body() updateSystemPromptDto: UpdateSystemPromptDto,
+  ) {
     return this.systemPromptsService.update(id, updateSystemPromptDto);
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string) {
     return this.systemPromptsService.remove(id);
   }

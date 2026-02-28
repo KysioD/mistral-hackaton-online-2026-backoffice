@@ -1,0 +1,1 @@
+const { Pool } = require('pg'); const pool = new Pool({ connectionString: 'postgresql://prisma:password@localhost:5432/mistral_backoffice_db?schema=public' }); async function main() { const result = await pool.query('SELECT * FROM "Tool";'); console.log(result.rows); pool.end(); } main().catch(console.error);

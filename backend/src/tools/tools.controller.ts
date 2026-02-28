@@ -1,20 +1,35 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { ToolsService } from './tools.service';
+import { CreateToolDto, UpdateToolDto } from './dto/tool.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
+@ApiTags('Tools')
 @Controller('tools')
 export class ToolsController {
   constructor(private readonly toolsService: ToolsService) {}
 
   @Post()
-  create(@Body() createToolDto: { name: string; description: string }) {
+  create(@Body() createToolDto: CreateToolDto) {
     return this.toolsService.create(createToolDto);
   }
 
   @Get()
-  findAll(@Query('skip') skip?: string, @Query('take') take?: string) {
+  findAll(@Query() query: PaginationDto) {
     return this.toolsService.findAll({
-      skip: skip ? parseInt(skip, 10) : 0,
-      take: take ? parseInt(take, 10) : 20,
+      page: query.page,
+      perPage: query.perPage,
     });
   }
 
@@ -24,11 +39,12 @@ export class ToolsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateToolDto: { name?: string; description?: string }) {
+  update(@Param('id') id: string, @Body() updateToolDto: UpdateToolDto) {
     return this.toolsService.update(id, updateToolDto);
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string) {
     return this.toolsService.remove(id);
   }
