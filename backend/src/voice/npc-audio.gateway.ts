@@ -18,6 +18,19 @@ export class NpcAudioGateway implements OnGatewayConnection, OnGatewayDisconnect
   /** clientId → WebSocket */
   private clients = new Map<string, WebSocket>();
 
+  /** clientId → cleanup callbacks to invoke on disconnect */
+  private disconnectCallbacks = new Map<string, Set<() => void>>();
+
+  /** Register a callback to be called when the given client disconnects. */
+  onClientDisconnect(clientId: string, callback: () => void): void {
+    let cbs = this.disconnectCallbacks.get(clientId);
+    if (!cbs) {
+      cbs = new Set();
+      this.disconnectCallbacks.set(clientId, cbs);
+    }
+    cbs.add(callback);
+  }
+
   handleConnection(client: WebSocket) {
     const clientId = randomUUID();
     (client as any).__clientId = clientId;
@@ -31,6 +44,13 @@ export class NpcAudioGateway implements OnGatewayConnection, OnGatewayDisconnect
     if (clientId) {
       this.clients.delete(clientId);
       this.logger.log(`NPC audio client disconnected: ${clientId}`);
+      const cbs = this.disconnectCallbacks.get(clientId);
+      if (cbs) {
+        for (const cb of cbs) {
+          try { cb(); } catch { /* ignore */ }
+        }
+        this.disconnectCallbacks.delete(clientId);
+      }
     }
   }
 

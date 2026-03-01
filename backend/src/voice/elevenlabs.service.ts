@@ -6,6 +6,8 @@ export interface ElevenLabsSession {
   sendText: (text: string) => void;
   /** Signal end of input and flush pending audio. */
   endText: () => void;
+  /** Forcefully terminate the ElevenLabs WebSocket and signal end of audio. */
+  close: () => void;
   /** Async iterable of mp3_44100_128 audio chunks. Ends when the WS closes. */
   audioChunks: AsyncIterable<Buffer>;
 }
@@ -203,6 +205,11 @@ export class ElevenLabsService {
       },
     };
 
-    return { sendText, endText, audioChunks };
+    const close = () => {
+      signalEnd();
+      ws.terminate();
+    };
+
+    return { sendText, endText, close, audioChunks };
   }
 }
