@@ -15,6 +15,7 @@ services:
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
       ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-}
+      VOXTRAL_MODEL: ${VOXTRAL_MODEL:-voxtral-mini-transcribe-realtime-2602}
     command: >
       sh -c "npx prisma migrate deploy && npx prisma db seed && npm run start:prod"
     ports:
@@ -25,10 +26,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
     networks:
       - mistral-network
 
