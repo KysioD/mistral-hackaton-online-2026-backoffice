@@ -6,6 +6,8 @@ services:
     build:
       context: ./backend
     container_name: mistral-backend
+    env_file:
+      - .env
     environment:
       DATABASE_URL: "postgresql://prisma:password@postgres:5432/mistral_backoffice_db?schema=public"
       LLM_MODEL: ${LLM_MODEL:-ministral-8b-latest}
