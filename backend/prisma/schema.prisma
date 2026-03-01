@@ -102,7 +102,6 @@ model Message {
   content         String
   toolCalls       Json?
   toolCallId      String?
-  suggestedAction Json?
   createdAt       DateTime @default(now())
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)

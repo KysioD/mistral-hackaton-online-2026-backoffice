@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNpcDto, UpdateNpcDto, TalkDto } from './dto/npc.dto';
 import { ChatMistralAI } from "@langchain/mistralai";
-import { SystemMessage, HumanMessage, AIMessage } from "@langchain/core/messages";
+import { SystemMessage, HumanMessage, AIMessage, ToolMessage } from "@langchain/core/messages";
 
 @Injectable()
 export class NpcsService {
@@ -215,7 +215,7 @@ export class NpcsService {
     } else {
       const existingSession = await this.prisma.session.findUnique({
         where: { id: sessionId },
-        include: { messages: true },
+        include: { messages: { orderBy: { createdAt: 'asc' } } },
       });
       if (!existingSession || existingSession.npcId !== id) {
         throw new BadRequestException('Invalid session ID for this NPC');
@@ -223,12 +223,32 @@ export class NpcsService {
       history = existingSession.messages;
     }
 
-    // Save the user message
+    let inferredToolCallId: string | undefined = undefined;
+
+    if (talkDto.toolName) {
+      // Find the last ASSISTANT message without mutating the original history
+      const lastAssistantMsg = [...history].reverse().find(msg => msg.role === 'ASSISTANT');
+      
+      // Extract the toolCallId matching the provided toolName from toolCalls
+      if (lastAssistantMsg?.toolCalls) {
+        const calls = lastAssistantMsg.toolCalls as any[];
+        const matchingCall = calls.find(c => c.name === talkDto.toolName);
+        if (matchingCall) {
+          inferredToolCallId = matchingCall.id; 
+        }
+      }
+    }
+
+    const messageRole = inferredToolCallId ? 'TOOL' : 'USER';
+    const messageContent = typeof talkDto.message === 'string' ? talkDto.message : JSON.stringify(talkDto.message);
+
+    // Save the user message or tool result
     const userMessage = await this.prisma.message.create({
       data: {
         sessionId,
-        role: 'USER',
-        content: talkDto.message,
+        role: messageRole,
+        content: messageContent,
+        toolCallId: inferredToolCallId || undefined,
       },
     });
 
@@ -270,9 +290,17 @@ export class NpcsService {
       if (msg.role === 'SYSTEM') return new SystemMessage(msg.content);
       if (msg.role === 'USER') return new HumanMessage(msg.content);
       if (msg.role === 'ASSISTANT') {
-        const mc = new AIMessage(msg.content);
-        // Note: keeping simple for now, no need to include tool calls in history unless desired
+        const mc = new AIMessage({
+          content: msg.content,
+          tool_calls: (msg.toolCalls as any) || [],
+        });
         return mc;
+      }
+      if (msg.role === 'TOOL') {
+        return new ToolMessage({
+          content: msg.content,
+          tool_call_id: msg.toolCallId,
+        });
       }
       return new HumanMessage(msg.content); // fallback
     });
@@ -297,15 +325,16 @@ export class NpcsService {
       }
     }
 
-    let suggestedAction: any = null;
     if (finalMsg && finalMsg.tool_calls && finalMsg.tool_calls.length > 0) {
-      const tc = finalMsg.tool_calls[0];
-      suggestedAction = {
-        tool: tc.name,
-        parameters: tc.args,
-      };
       if (res) {
-        res.write(JSON.stringify({ type: 'tool_call', ...suggestedAction }) + '\n');
+        for (const tc of finalMsg.tool_calls) {
+          res.write(JSON.stringify({ 
+            type: 'tool_call', 
+            id: tc.id,
+            toolName: tc.name,
+            parameters: tc.args
+          }) + '\n');
+        }
       }
     }
 
@@ -314,7 +343,7 @@ export class NpcsService {
         sessionId,
         role: 'ASSISTANT',
         content: responseContent,
-        suggestedAction: suggestedAction ? suggestedAction : undefined,
+        toolCalls: finalMsg?.tool_calls?.length > 0 ? finalMsg.tool_calls : undefined,
       },
     });
 

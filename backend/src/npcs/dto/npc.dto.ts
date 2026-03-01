@@ -97,11 +97,14 @@ export class UpdateNpcDto {
   toolNames?: string[];
 }
 export class TalkDto {
-  @IsString()
   @IsNotEmpty()
-  message: string;
+  message: any;
 
   @IsString()
   @IsOptional()
   sessionId?: string;
+
+  @IsString()
+  @IsOptional()
+  toolName?: string;
 }
