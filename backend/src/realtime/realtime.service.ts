@@ -14,6 +14,7 @@ const VOXTRAL_MODEL = process.env.VOXTRAL_MODEL ?? 'voxtral-mini-transcribe-real
 interface ClientState {
   connection: RealtimeConnection | null;
   connecting: boolean;
+  audioChunkCount: number;
 }
 
 @Injectable()
@@ -31,8 +32,13 @@ export class RealtimeService {
   async handleConnection(client: WebSocket) {
     this.logger.log(`Client connected, establishing Voxtral session (model: ${VOXTRAL_MODEL})...`);
 
-    const state: ClientState = { connection: null, connecting: true };
+    const state: ClientState = { connection: null, connecting: true, audioChunkCount: 0 };
     this.clientStates.set(client, state);
+
+    // Log the WebSocket close code/reason to understand why the client disconnected
+    client.once('close', (code: number, reason: Buffer) => {
+      this.logger.warn(`WS client closed — code: ${code}, reason: "${reason.toString() || '(none)'}"`);
+    });
 
     try {
       const connection = await this.realtimeClient.connect(VOXTRAL_MODEL, {
@@ -65,8 +71,9 @@ export class RealtimeService {
         if (client.readyState !== WebSocket.OPEN) break;
         this.handleVoxtralEvent(client, event);
       }
+      this.logger.log('Voxtral event stream ended normally (connection closed)');
     } catch (err) {
-      this.logger.error('Error in Voxtral event stream', err);
+      this.logger.error(`Error in Voxtral event stream: ${(err as any)?.message ?? err}`);
       if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({ event: 'error', data: { message: 'Voxtral stream error' } }));
       }
@@ -123,9 +130,17 @@ export class RealtimeService {
         audioBytes = payload;
       }
 
+      // Log first chunk and every 100th to avoid flooding
+      state.audioChunkCount++;
+      if (state.audioChunkCount === 1) {
+        this.logger.debug(`First audio chunk received — ${audioBytes.byteLength} bytes`);
+      } else if (state.audioChunkCount % 100 === 0) {
+        this.logger.debug(`Audio chunk #${state.audioChunkCount} — ${audioBytes.byteLength} bytes`);
+      }
+
       await state.connection.sendAudio(audioBytes);
     } catch (err) {
-      this.logger.error('Error forwarding audio to Voxtral', err);
+      this.logger.error(`Error forwarding audio to Voxtral: ${(err as any)?.message ?? err}`);
     }
   }
 }
