@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { ToolsModule } from './tools/tools.module';
 import { SystemPromptsModule } from './system-prompts/system-prompts.module';
 import { NpcsModule } from './npcs/npcs.module';
+import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { NpcsModule } from './npcs/npcs.module';
     ToolsModule,
     SystemPromptsModule,
     NpcsModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
