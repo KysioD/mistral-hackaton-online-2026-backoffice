@@ -15,6 +15,7 @@ interface ClientState {
   connection: RealtimeConnection | null;
   connecting: boolean;
   audioChunkCount: number;
+  pendingAudio: Uint8Array[];
 }
 
 @Injectable()
@@ -32,7 +33,7 @@ export class RealtimeService {
   async handleConnection(client: WebSocket) {
     this.logger.log(`Client connected, establishing Voxtral session (model: ${VOXTRAL_MODEL})...`);
 
-    const state: ClientState = { connection: null, connecting: true, audioChunkCount: 0 };
+    const state: ClientState = { connection: null, connecting: true, audioChunkCount: 0, pendingAudio: [] };
     this.clientStates.set(client, state);
 
     // Log the WebSocket close code/reason to understand why the client disconnected
@@ -51,7 +52,18 @@ export class RealtimeService {
       state.connection = connection;
       state.connecting = false;
 
-      this.logger.log('Voxtral session established');
+      // Flush any audio that arrived before the session was ready
+      if (state.pendingAudio.length > 0) {
+        this.logger.log(`Flushing ${state.pendingAudio.length} queued audio chunk(s) to Voxtral`);
+        for (const chunk of state.pendingAudio) {
+          await connection.sendAudio(chunk).catch((err) =>
+            this.logger.error(`Error flushing queued audio: ${(err as any)?.message ?? err}`),
+          );
+        }
+        state.pendingAudio = [];
+      }
+
+      this.logger.log('Voxtral session established. Ready for audio.');
       client.send(JSON.stringify({ event: 'session_ready', data: {} }));
 
       // Pump events from Mistral → client in the background
@@ -113,8 +125,24 @@ export class RealtimeService {
   async processAudio(client: WebSocket, payload: Buffer | string | Uint8Array) {
     const state = this.clientStates.get(client);
 
-    if (!state?.connection) {
-      this.logger.warn('Audio received but Voxtral session not ready yet');
+    if (!state) return;
+
+    if (!state.connection) {
+      // Queue audio until the Voxtral session is established
+      if (state.connecting) {
+        state.pendingAudio.push(
+          Buffer.isBuffer(payload)
+            ? new Uint8Array(payload)
+            : typeof payload === 'string'
+            ? new Uint8Array(Buffer.from(payload, 'base64'))
+            : payload,
+        );
+        if (state.pendingAudio.length === 1) {
+          this.logger.debug('Voxtral session not ready yet — buffering audio until connected');
+        }
+      } else {
+        this.logger.warn('Audio received but Voxtral session is gone (connection failed)');
+      }
       return;
     }
 
