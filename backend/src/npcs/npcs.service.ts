@@ -5,6 +5,7 @@ import { ChatMistralAI, MistralAIEmbeddings } from "@langchain/mistralai";
 import { SystemMessage, HumanMessage, AIMessage, ToolMessage } from "@langchain/core/messages";
 import * as crypto from 'crypto';
 import { ElevenLabsService } from '../voice/elevenlabs.service';
+import { NpcAudioGateway } from '../voice/npc-audio.gateway';
 
 @Injectable()
 export class NpcsService {
@@ -16,6 +17,7 @@ export class NpcsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly elevenLabs: ElevenLabsService,
+    private readonly npcAudio: NpcAudioGateway,
   ) {}
 
   async create(createNpcDto: CreateNpcDto) {
@@ -464,6 +466,8 @@ export class NpcsService {
       !!process.env.ELEVENLABS_API_KEY &&
       !!effectiveVoiceId;
 
+    this.logger.debug(`ttsEnabled=${ttsEnabled}  clientId=${talkDto.clientId ?? '(none)'}`);
+
     let ttsSession: ReturnType<ElevenLabsService['createSession']> | null = null;
     let audioListenerDone: Promise<void> = Promise.resolve();
 
@@ -471,11 +475,16 @@ export class NpcsService {
       try {
         ttsSession = this.elevenLabs.createSession(effectiveVoiceId!);
 
-        // Concurrently drain audio chunks and write them to the response
+        // Concurrently drain audio chunks and deliver them:
+        //  - over the dedicated WS connection if the caller supplied a clientId
+        //  - over the HTTP response as a fallback (e.g. test_voice.py)
+        const wsClientId = talkDto.clientId;
         audioListenerDone = (async () => {
           try {
             for await (const audioChunk of ttsSession!.audioChunks) {
-              if (res) {
+              if (wsClientId && this.npcAudio.hasClient(wsClientId)) {
+                this.npcAudio.sendAudio(wsClientId, audioChunk);
+              } else if (res) {
                 res.write(
                   JSON.stringify({
                     type: 'audio',

@@ -119,6 +119,12 @@ export class TalkDto {
   @IsString()
   @IsOptional()
   toolName?: string;
+
+  /** WS clientId obtained from the /npc-audio gateway. When present, audio
+   * chunks are pushed over that WS connection instead of the HTTP response. */
+  @IsString()
+  @IsOptional()
+  clientId?: string;
 }
 
 export class AddExamplesDto {
