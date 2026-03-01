@@ -220,6 +220,9 @@ export class NpcsService {
       if (!existingSession || existingSession.npcId !== id) {
         throw new BadRequestException('Invalid session ID for this NPC');
       }
+      if (existingSession.endedAt) {
+        throw new BadRequestException('Session is already closed');
+      }
       history = existingSession.messages;
     }
 
@@ -264,17 +267,35 @@ export class NpcsService {
         description: t.description || "",
         parameters: {
           type: 'object',
-          properties: t.parameters.reduce((acc: any, param) => {
+          properties: (t.parameters || []).reduce((acc: any, param) => {
             acc[param.name] = {
               type: 'string', // Assuming strings
               description: param.description || "",
             };
             return acc;
           }, {} as any),
-          required: t.parameters.filter((p) => p.required).map((p) => p.name),
+          required: (t.parameters || []).filter((p) => p.required).map((p) => p.name),
         },
       },
     }));
+
+    mistralTools.push({
+      type: 'function',
+      function: {
+        name: 'close_conversation',
+        description: 'MANDATORY: You MUST call this tool immediately whenever the user says goodbye, says thank you, indicates they are leaving, or ends the conversation. This is the ONLY way to end a conversation.',
+        parameters: {
+          type: 'object',
+          properties: {
+            farewell_message: {
+              type: 'string',
+              description: 'The polite goodbye message to say to the user before ending the conversation.',
+            }
+          },
+          required: ['farewell_message'],
+        },
+      },
+    });
 
     let model = new ChatMistralAI({
       model: 'ministral-8b-latest',
@@ -286,9 +307,16 @@ export class NpcsService {
       model = model.bindTools(mistralTools) as any;
     }
 
-    const lcMessages = history.map((msg) => {
+    const lcMessages: any[] = history.map((msg, index) => {
       if (msg.role === 'SYSTEM') return new SystemMessage(msg.content);
-      if (msg.role === 'USER') return new HumanMessage(msg.content);
+      if (msg.role === 'USER') {
+        let content = msg.content;
+        // Inject a prompt reminder to the very last user message
+        if (index === history.length - 1) {
+          content += "\n\n[SYSTEM REMINDER: If this message indicates a goodbye, a thank you, or concluding the conversation, you MUST immediately call the `close_conversation` tool. Do not just reply with text.]";
+        }
+        return new HumanMessage(content);
+      }
       if (msg.role === 'ASSISTANT') {
         const mc = new AIMessage({
           content: msg.content,
@@ -309,6 +337,7 @@ export class NpcsService {
 
     let finalMsg: any = null;
     let responseContent = "";
+    let isClosing = false;
 
     for await (const chunk of stream) {
       if (!finalMsg) {
@@ -323,11 +352,37 @@ export class NpcsService {
           res.write(JSON.stringify({ type: 'text', content: chunk.content }) + '\n');
         }
       }
+
+      // Intercept tool calls in the stream using finalMsg.tool_calls to ensure we have the full name
+      if (!isClosing && finalMsg && finalMsg.tool_calls && finalMsg.tool_calls.length > 0) {
+        const hasClose = finalMsg.tool_calls.some((tc: any) => tc.name === 'close_conversation');
+        if (hasClose) {
+          isClosing = true;
+          if (res) {
+            res.write(JSON.stringify({ type: 'close' }) + '\n');
+          }
+        }
+      }
     }
 
-    if (finalMsg && finalMsg.tool_calls && finalMsg.tool_calls.length > 0) {
-      if (res) {
-        for (const tc of finalMsg.tool_calls) {
+    let finalToolCalls = finalMsg?.tool_calls || [];
+    if (finalToolCalls.length > 0) {
+      finalToolCalls = finalToolCalls.filter((tc: any) => {
+        if (tc.name === 'close_conversation') {
+          isClosing = true;
+          if (tc.args && tc.args.farewell_message) {
+            responseContent += (responseContent ? "\n" : "") + tc.args.farewell_message;
+            if (res) {
+              res.write(JSON.stringify({ type: 'text', content: tc.args.farewell_message }) + '\n');
+            }
+          }
+          return false; // Remove this internal tool from being sent/handled
+        }
+        return true;
+      });
+
+      if (res && finalToolCalls.length > 0) {
+        for (const tc of finalToolCalls) {
           res.write(JSON.stringify({ 
             type: 'tool_call', 
             id: tc.id,
@@ -343,26 +398,29 @@ export class NpcsService {
         sessionId,
         role: 'ASSISTANT',
         content: responseContent,
-        toolCalls: finalMsg?.tool_calls?.length > 0 ? finalMsg.tool_calls : undefined,
+        toolCalls: finalToolCalls.length > 0 ? finalToolCalls : undefined,
       },
     });
 
     history.push(assistantMessage);
 
-    // Update the session's endedAt timestamp
-    await this.prisma.session.update({
-      where: { id: sessionId },
-      data: { endedAt: new Date() },
-    });
+    if (isClosing) {
+      // Update the session's endedAt timestamp
+      await this.prisma.session.update({
+        where: { id: sessionId },
+        data: { endedAt: new Date() },
+      });
+    }
 
     if (res) {
-      res.write(JSON.stringify({ type: 'done', sessionId, message: assistantMessage }) + '\n');
+      res.write(JSON.stringify({ type: 'done', sessionId, message: assistantMessage, closed: isClosing }) + '\n');
     }
 
     return {
       message: assistantMessage,
       sessionId,
       history,
+      closed: isClosing,
     };
   }
 }
