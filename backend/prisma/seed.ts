@@ -47,8 +47,7 @@ const TOOLS: Array<{
     name: "list_info",
     description:
       "Return factual information about the NPC and their current situation " +
-      "(identity, profession, location, relationships, services). " +
-      "Call this at the start of a conversation to ground the NPC's responses.",
+      "(identity, profession, location, relationships, services). " ,
     parameters: [],
   },
   {
@@ -326,7 +325,7 @@ const NPCS: Array<{
   {
     firstName: "Célestin",
     lastName: "de Cormeil",
-    prefab: "TavernKeeperTemplate",
+    prefab: "TraderTemplate",
     voiceId: "zNsotODqUhvbJ5wMG7Ei",
     spawnX: 16.06, 
     spawnY: 1.0,
@@ -354,7 +353,7 @@ const NPCS: Array<{
   {
     firstName: "Edgar",
     lastName: "de Cormeil",
-    prefab: "TraderTemplate",
+    prefab: "TavernKeeperTemplate",
     voiceId: "wWWn96OtTHu1sn8SRGEr",
     spawnX: 42.6, 
     spawnY: 1.0,
