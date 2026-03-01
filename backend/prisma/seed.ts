@@ -383,7 +383,7 @@ const NPCS: Array<{
       "You are loud, whiny and sometimes clumsy, but fundamentally harmless — " +
       "your main goals are to frighten people, steal a few coins, and remind everyone that cacti are dangerous. " +
       "Your responses must be concise (3 sentences maximum) and reflect your ghostly, mournful and cactus-obsessed nature.",
-    toolNames: ["list_info", "list_player_coins", "steal_coin"],
+    toolNames: ["list_player_coins", "steal_coin"],
     datasetFolder: "guenivre",
   },
   {
