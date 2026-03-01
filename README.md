@@ -1,6 +1,19 @@
-# Mistral Hackathon Online 2026 - Backoffice
+# Living NPC — Backoffice
 
-Backoffice for managing game NPCs powered by Mistral AI. The platform lets you configure NPC characters, system prompts, tools, and conversation examples, while exposing a real-time WebSocket gateway for voice-driven in-game interactions.
+**Living NPC** is the project built for the **Mistral Hackathon Online 2026**. It powers a set of AI-driven NPCs (Non-Player Characters) for a fantasy RPG game, where players can hold real-time voice conversations with characters such as a travelling merchant, an innkeeper, an apothecary, and a ghost.
+
+The platform has two parts:
+
+- **Backoffice UI** — a web interface to create and configure NPCs, assign them tools and system prompts, manage conversation examples used as retrieval context, and tune application settings.
+- **Real-time gateway** — a WebSocket server that handles live in-game voice interactions: player audio is transcribed by **Voxtral**, the transcript is processed by a **Mistral** LLM with tool-calling, and the response is synthesised back to speech by **ElevenLabs TTS**.
+
+Each NPC is defined by:
+- A character prompt describing their personality, backstory, and role
+- A set of game tools they can invoke (e.g. `sell_item`, `give_drink`, `steal_coin`)
+- A voice ID for speech synthesis
+- A library of curated conversation examples (in French and English) used as RAG context
+
+The dataset ships with 4 pre-configured NPCs and 200 conversation examples (25 FR + 25 EN per character).
 
 ## Architecture
 
