@@ -1,27 +1,25 @@
-FROM node:22-slim
-
-# Install OpenSSL required by Prisma
+# Stage 1: Build
+FROM node:22-slim AS builder
 RUN apt-get update -y && apt-get install -y openssl
-
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies  
 RUN npm install
-
-# Copy source code and prisma schema
 COPY . .
-
-# Generate Prisma Client
 RUN npx prisma generate
-
-# Build the NestJS app
 RUN npm run build
 
-# Expose port
-EXPOSE 3000
+# Stage 2: Production
+FROM node:22-slim
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY package*.json ./
+# ONLY install production dependencies
+RUN npm install --omit=dev
+# Specifically target the exact dist folder output you asked for!
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/dist ./dist
 
-# Default command (can be overridden by docker-compose)
-CMD ["npm", "run", "start:prod"]
+EXPOSE 3000
+CMD ["node", "dist/main"]
