@@ -15,7 +15,9 @@ services:
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
       ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-}
     command: >
-      sh -c "npx prisma migrate deploy && npm run start:prod"
+      sh -c "npx prisma migrate deploy && npx prisma db seed && npm run start:prod"
+    volumes:
+      - ./dataset:/dataset
     ports:
       - '3001:3000'
       - '8080:8080'
