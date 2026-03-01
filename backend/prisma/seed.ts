@@ -403,7 +403,6 @@ const NPCS: Array<{
       "mais tu prends la médecine très au sérieux. " +
       "Ta réponse doit être concise (3 phrases maximum).",
     toolNames: [
-      "list_info",
       "inspect_player",
       "list_medicine",
       "give_medicine",

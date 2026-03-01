@@ -4,7 +4,8 @@ include:
 services:
   backend:
     build:
-      context: ./backend
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: mistral-backend
     env_file:
       - .env
@@ -16,8 +17,6 @@ services:
       ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-}
     command: >
       sh -c "npx prisma migrate deploy && npx prisma db seed && npm run start:prod"
-    volumes:
-      - ./dataset:/dataset
     ports:
       - '3001:3000'
       - '8080:8080'
