@@ -1,17 +1,22 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNpcDto, UpdateNpcDto, TalkDto } from './dto/npc.dto';
 import { ChatMistralAI, MistralAIEmbeddings } from "@langchain/mistralai";
 import { SystemMessage, HumanMessage, AIMessage, ToolMessage } from "@langchain/core/messages";
 import * as crypto from 'crypto';
+import { ElevenLabsService } from '../voice/elevenlabs.service';
 
 @Injectable()
 export class NpcsService {
+  private readonly logger = new Logger(NpcsService.name);
   private embeddings = new MistralAIEmbeddings({
     model: 'mistral-embed',
   });
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly elevenLabs: ElevenLabsService,
+  ) {}
 
   async create(createNpcDto: CreateNpcDto) {
     const { toolNames, conversationExamples, ...npcData } = createNpcDto;
@@ -91,9 +96,6 @@ export class NpcsService {
               tool: true,
             },
           },
-          conversationExamples: {
-            select: { id: true, messages: true }
-          }
         },
         orderBy: { updatedAt: 'desc' },
       }),
@@ -187,8 +189,10 @@ export class NpcsService {
     return result;
   }
 
-  private async _handleConversationExamples(npcId: string, examples: any[]) {
-    await this.prisma.conversationExample.deleteMany({ where: { npcId } });
+  private async _handleConversationExamples(npcId: string, examples: any[], replace: boolean = true) {
+    if (replace) {
+      await this.prisma.conversationExample.deleteMany({ where: { npcId } });
+    }
     
     if (!examples || examples.length === 0) return;
 
@@ -206,13 +210,53 @@ export class NpcsService {
     }
   }
 
+  async getExamples(npcId: string, page: number = 1, perPage: number = 20) {
+    const skip = (page - 1) * perPage;
+    const [data, total] = await Promise.all([
+      this.prisma.conversationExample.findMany({
+        where: { npcId },
+        select: { id: true, messages: true },
+        orderBy: { updatedAt: 'desc' },
+        skip,
+        take: perPage,
+      }),
+      this.prisma.conversationExample.count({ where: { npcId } }),
+    ]);
+    return {
+      data,
+      meta: { total, page, perPage, lastPage: Math.ceil(total / perPage) || 1 },
+    };
+  }
+
+  async addExamples(npcId: string, examples: any[]) {
+    // Verify NPC exists
+    await this.prisma.npc.findUniqueOrThrow({ where: { id: npcId } });
+    if (!examples || examples.length === 0) return { added: 0 };
+    // Normalize: frontend sends [{messages:[...]}, ...] but storage expects [[msg,...], ...]
+    const normalized = examples.map((ex: any) =>
+      ex && typeof ex === 'object' && Array.isArray(ex.messages) ? ex.messages : ex
+    );
+    await this._handleConversationExamples(npcId, normalized, false);
+    return { added: normalized.length };
+  }
+
+  async deleteExample(npcId: string, exampleId: string) {
+    return this.prisma.conversationExample.delete({
+      where: { id: exampleId, npcId },
+    });
+  }
+
+  async clearExamples(npcId: string) {
+    await this.prisma.conversationExample.deleteMany({ where: { npcId } });
+  }
+
   async remove(id: string) {
     return this.prisma.npc.delete({
       where: { id },
     });
   }
 
-  async talk(id: string, talkDto: TalkDto, res?: any) {
+  async talk(id: string, talkDto: TalkDto, res?: any, voice?: boolean) {
     const npc = await this.prisma.npc.findUniqueOrThrow({
       where: { id },
       include: {
@@ -412,6 +456,46 @@ export class NpcsService {
 
     const stream = await model.stream(lcMessages);
 
+    // ── ElevenLabs TTS setup ─────────────────────────────────────────────────
+    const effectiveVoiceId: string | undefined =
+      (npc as any).voiceId ?? process.env.ELEVENLABS_VOICE_ID;
+    const ttsEnabled =
+      voice === true &&
+      !!process.env.ELEVENLABS_API_KEY &&
+      !!effectiveVoiceId;
+
+    let ttsSession: ReturnType<ElevenLabsService['createSession']> | null = null;
+    let audioListenerDone: Promise<void> = Promise.resolve();
+
+    if (ttsEnabled) {
+      try {
+        ttsSession = this.elevenLabs.createSession(effectiveVoiceId!);
+
+        // Concurrently drain audio chunks and write them to the response
+        audioListenerDone = (async () => {
+          try {
+            for await (const audioChunk of ttsSession!.audioChunks) {
+              if (res) {
+                res.write(
+                  JSON.stringify({
+                    type: 'audio',
+                    content: audioChunk.toString('base64'),
+                    format: 'mp3',
+                  }) + '\n',
+                );
+              }
+            }
+          } catch (err) {
+            this.logger.error('Error draining ElevenLabs audio stream', err);
+          }
+        })();
+      } catch (err) {
+        this.logger.error('Failed to create ElevenLabs session, skipping TTS', err);
+        ttsSession = null;
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     let finalMsg: any = null;
     let responseContent = "";
     let isClosing = false;
@@ -428,6 +512,8 @@ export class NpcsService {
         if (res) {
           res.write(JSON.stringify({ type: 'text', content: chunk.content }) + '\n');
         }
+        // Forward text to TTS (tool call chunks have no content here)
+        ttsSession?.sendText(String(chunk.content));
       }
 
       // Intercept tool calls in the stream using finalMsg.tool_calls to ensure we have the full name
@@ -452,6 +538,8 @@ export class NpcsService {
             if (res) {
               res.write(JSON.stringify({ type: 'text', content: tc.args.farewell_message }) + '\n');
             }
+            // Farewell message is spoken aloud
+            ttsSession?.sendText(tc.args.farewell_message);
           }
           return false; // Remove this internal tool from being sent/handled
         }
@@ -468,6 +556,12 @@ export class NpcsService {
           }) + '\n');
         }
       }
+    }
+
+    // Signal end of text to ElevenLabs and wait for all audio to be written
+    if (ttsSession) {
+      ttsSession.endText();
+      await audioListenerDone;
     }
 
     const assistantMessage = await this.prisma.message.create({

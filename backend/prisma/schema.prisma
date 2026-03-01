@@ -59,6 +59,7 @@ model Npc {
   spawnZ          Float
   spawnRotation   Float
   characterPrompt String
+  voiceId         String?
   tools           NpcTool[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

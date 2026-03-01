@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.37.0",
     "@langchain/mistralai": "^1.0.6",
     "@mistralai/mistralai": "^1.14.1",
     "@nestjs/common": "^11.0.1",

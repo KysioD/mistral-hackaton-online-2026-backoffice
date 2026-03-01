@@ -103,6 +103,10 @@ export class UpdateNpcDto {
   @IsOptional()
   @IsArray()
   conversationExamples?: any[];
+
+  @IsString()
+  @IsOptional()
+  voiceId?: string;
 }
 export class TalkDto {
   @IsNotEmpty()
@@ -115,4 +119,9 @@ export class TalkDto {
   @IsString()
   @IsOptional()
   toolName?: string;
+}
+
+export class AddExamplesDto {
+  @IsArray()
+  examples: any[];
 }

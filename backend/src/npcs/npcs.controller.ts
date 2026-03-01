@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { NpcsService } from './npcs.service';
-import { CreateNpcDto, UpdateNpcDto, TalkDto } from './dto/npc.dto';
+import { CreateNpcDto, UpdateNpcDto, TalkDto, AddExamplesDto } from './dto/npc.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { NpcEntity, PaginatedNpcsEntity } from './entities/npc.entity';
 
@@ -81,16 +81,53 @@ export class NpcsController {
     return this.npcsService.remove(id);
   }
 
+  @Get(':id/examples')
+  @ApiOperation({ summary: 'Get paginated conversation examples for an NPC' })
+  @ApiParam({ name: 'id', description: 'NPC ID' })
+  getExamples(@Param('id') id: string, @Query() query: PaginationDto) {
+    return this.npcsService.getExamples(id, query.page, query.perPage ?? 20);
+  }
+
+  @Post(':id/examples')
+  @ApiOperation({ summary: 'Append conversation examples to an NPC' })
+  @ApiParam({ name: 'id', description: 'NPC ID' })
+  addExamples(@Param('id') id: string, @Body() body: AddExamplesDto) {
+    return this.npcsService.addExamples(id, body.examples);
+  }
+
+  @Delete(':id/examples')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Clear all conversation examples for an NPC' })
+  @ApiParam({ name: 'id', description: 'NPC ID' })
+  clearExamples(@Param('id') id: string) {
+    return this.npcsService.clearExamples(id);
+  }
+
+  @Delete(':id/examples/:exampleId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a single conversation example' })
+  @ApiParam({ name: 'id', description: 'NPC ID' })
+  @ApiParam({ name: 'exampleId', description: 'Example ID' })
+  deleteExample(@Param('id') id: string, @Param('exampleId') exampleId: string) {
+    return this.npcsService.deleteExample(id, exampleId);
+  }
+
   @Post(':id/talk')
   @ApiOperation({ summary: 'Talk to an NPC' })
   @ApiParam({ name: 'id', description: 'NPC ID' })
   @ApiResponse({ status: 200, description: 'Stream the NPC response.' })
   @ApiResponse({ status: 404, description: 'NPC not found.' })
-  async talk(@Param('id') id: string, @Body() talkDto: TalkDto, @Res() res: any) {
+  async talk(
+    @Param('id') id: string,
+    @Body() talkDto: TalkDto,
+    @Res() res: any,
+    @Query('voice') voice?: string,
+  ) {
+    const withVoice = voice === 'true' || voice === '1';
     res.setHeader('Content-Type', 'application/x-ndjson');
     res.setHeader('Transfer-Encoding', 'chunked');
     try {
-      await this.npcsService.talk(id, talkDto, res);
+      await this.npcsService.talk(id, talkDto, res, withVoice);
       res.end();
     } catch (error: any) {
       if (!res.headersSent) {

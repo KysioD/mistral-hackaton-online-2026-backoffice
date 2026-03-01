@@ -12,6 +12,8 @@ services:
       DATABASE_URL: "postgresql://prisma:password@postgres:5432/mistral_backoffice_db?schema=public"
       LLM_MODEL: ${LLM_MODEL:-ministral-8b-latest}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-}
     command: >
       sh -c "npx prisma migrate deploy && npm run start:prod"
     ports:

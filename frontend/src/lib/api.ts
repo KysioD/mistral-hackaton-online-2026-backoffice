@@ -17,9 +17,14 @@ export interface Npc {
   spawnZ: number;
   spawnRotation: number;
   characterPrompt: string;
+  voiceId?: string;
   tools: { toolId: string; npcId: string; tool: Tool }[];
+}
+
+export interface ConversationExample {
+  id: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  conversationExamples?: { id: string; messages: any[] }[];
+  messages: any[];
 }
 
 export interface Tool {
@@ -75,6 +80,17 @@ export const getNpcs = (page = 1, search = ""): Promise<PaginatedResult<Npc>> =>
 export const createNpc = (data: Partial<Npc>) => fetchApi<Npc>("/npcs", { method: "POST", body: JSON.stringify(data) });
 export const updateNpc = (id: string, data: Partial<Npc>) => fetchApi<Npc>(`/npcs/${id}`, { method: "PATCH", body: JSON.stringify(data) });
 export const deleteNpc = (id: string) => fetchApi<void>(`/npcs/${id}`, { method: "DELETE" });
+
+// NPC Conversation Examples
+export const getNpcExamples = (npcId: string, page = 1, perPage = 20): Promise<PaginatedResult<ConversationExample>> => {
+  return fetchApi<PaginatedResult<ConversationExample>>(`/npcs/${npcId}/examples?page=${page}&perPage=${perPage}`);
+};
+export const addNpcExamples = (npcId: string, examples: unknown[]): Promise<{ added: number }> =>
+  fetchApi(`/npcs/${npcId}/examples`, { method: "POST", body: JSON.stringify({ examples }) });
+export const clearNpcExamples = (npcId: string): Promise<void> =>
+  fetchApi(`/npcs/${npcId}/examples`, { method: "DELETE" });
+export const deleteNpcExample = (npcId: string, exampleId: string): Promise<void> =>
+  fetchApi(`/npcs/${npcId}/examples/${exampleId}`, { method: "DELETE" });
 
 // APIs - Tools
 export const getTools = (page = 1, limit = 10, search = ""): Promise<PaginatedResult<Tool>> => {
