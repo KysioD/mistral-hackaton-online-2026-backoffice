@@ -1,6 +1,6 @@
-# Living NPC — Backoffice
+# Mistral Hackathon Online 2026 - Backoffice
 
-**Living NPC** is the project built for the **Mistral Hackathon Online 2026**. It powers a set of AI-driven NPCs (Non-Player Characters) for a fantasy RPG game, where players can hold real-time voice conversations with characters such as a travelling merchant, an innkeeper, an apothecary, and a ghost.
+This project is the backoffice platform built for the **Mistral Hackathon Online 2026**. It powers a set of AI-driven NPCs (Non-Player Characters) for a fantasy RPG game, where players can hold real-time voice conversations with characters such as a travelling merchant, an innkeeper, an apothecary, and a ghost.
 
 The platform has two parts:
 
@@ -14,6 +14,33 @@ Each NPC is defined by:
 - A library of curated conversation examples (in French and English) used as RAG context
 
 The dataset ships with 4 pre-configured NPCs and 200 conversation examples (25 FR + 25 EN per character).
+
+## Quick Start
+
+**Requirements:** Docker (or Podman) and an `.env` file at the project root.
+
+```bash
+# 1. Clone the repo
+git clone <repo-url>
+cd mistral-hackaton-online-2026-backoffice
+
+# 2. Create your .env (see Environment Variables section for all options)
+cp .env.example .env   # then fill in your API keys
+
+# 3. Build and start everything
+docker compose up -d --build
+# or
+podman compose up -d --build
+```
+
+That's it. The backend will automatically run migrations and seed the database on first start.
+
+| Service | URL |
+|---------|-----|
+| Backoffice UI | http://localhost:3000 |
+| REST API | http://localhost:3001 |
+| Swagger docs | http://localhost:3001/api/docs |
+| WebSocket gateway | ws://localhost:8076 |
 
 ## Architecture
 
