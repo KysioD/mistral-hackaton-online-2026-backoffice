@@ -18,13 +18,13 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   constructor(private readonly realtimeService: RealtimeService) {}
 
   handleConnection(client: WebSocket) {
-    this.realtimeService.handleConnection(client);
-    
-    // Unity standard websocket clients sometimes send raw binary instead of JSON. 
-    // If standard JSON format { event: "...", data: "..." } is impossible from Unity,
-    // we can listen directly on the raw socket:
+    // Establish Voxtral session — fire and forget, errors handled inside the service
+    this.realtimeService.handleConnection(client).catch((err) => {
+      console.error('Unhandled error in handleConnection', err);
+    });
+
+    // Accept raw binary frames (e.g. from Unity native clients)
     client.on('message', (data: any) => {
-      // Basic check if it's a raw buffer
       if (Buffer.isBuffer(data)) {
         this.realtimeService.processAudio(client, data);
       }
