@@ -1,51 +1,34 @@
+include:
+  - docker-compose.db.yml
+
 services:
-  postgres:
-    image: pgvector/pgvector:pg17
-    container_name: mistral-db
+  backend:
+    build:
+      context: ./backend
+    container_name: mistral-backend
     environment:
-      POSTGRES_USER: prisma
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mistral_backoffice_db
+      DATABASE_URL: "postgresql://prisma:password@postgres:5432/mistral_backoffice_db?schema=public"
+      LLM_MODEL: ${LLM_MODEL:-ministral-8b-latest}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+    command: >
+      sh -c "npx prisma migrate deploy && npm run start:prod"
     ports:
-      - '5432:5432'
-    volumes:
-      - postgres-data:/var/lib/postgresql
+      - '3001:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - mistral-network
 
-  # backend:
-  #   build:
-  #     context: ./backend
-  #   container_name: mistral-backend
-  #   environment:
-  #     DATABASE_URL: "postgresql://prisma:password@postgres:5432/mistral_backoffice_db?schema=public"
-  #     LLM_MODEL: ${LLM_MODEL:-ministral-8b-latest}
-  #     MISTRAL_API_KEY: ${MISTRAL_API_KEY}
-  #   command: >
-  #     sh -c "npx prisma migrate deploy && npm run start:dev"
-  #   ports:
-  #     - '3001:3000'
-  #   depends_on:
-  #     - postgres
-  #   networks:
-  #     - mistral-network
-
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   container_name: mistral-frontend
-  #   ports:
-  #     - '3000:3000'
-  #   environment:
-  #     NEXT_PUBLIC_API_URL: http://mistral-backend:3000
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - mistral-network
-
-volumes:
-  postgres-data:
-
-networks:
-  mistral-network:
-    driver: bridge
+  frontend:
+    build:
+      context: ./frontend
+    container_name: mistral-frontend
+    ports:
+      - '3000:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    networks:
+      - mistral-network
