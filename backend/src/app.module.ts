@@ -6,6 +6,7 @@ import { ToolsModule } from './tools/tools.module';
 import { SystemPromptsModule } from './system-prompts/system-prompts.module';
 import { NpcsModule } from './npcs/npcs.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { RealtimeModule } from './realtime/realtime.module';
     SystemPromptsModule,
     NpcsModule,
     RealtimeModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

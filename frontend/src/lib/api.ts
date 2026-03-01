@@ -107,3 +107,17 @@ export const getSystemPrompts = (page = 1): Promise<PaginatedResult<SystemPrompt
 export const createSystemPrompt = (data: Partial<SystemPrompt>) => fetchApi<SystemPrompt>("/system-prompts", { method: "POST", body: JSON.stringify(data) });
 export const updateSystemPrompt = (id: string, data: Partial<SystemPrompt>) => fetchApi<SystemPrompt>(`/system-prompts/${id}`, { method: "PATCH", body: JSON.stringify(data) });
 export const deleteSystemPrompt = (id: string) => fetchApi<void>(`/system-prompts/${id}`, { method: "DELETE" });
+
+// APIs - Settings
+export interface AppSettings {
+  MISTRAL_API_KEY: string;
+  LLM_MODEL: string;
+  ELEVENLABS_API_KEY: string;
+  ELEVENLABS_VOICE_ID: string;
+  VOXTRAL_MODEL: string;
+}
+
+export const getSettings = (): Promise<AppSettings> =>
+  fetchApi<{ data: AppSettings }>("/settings").then((r) => r.data);
+export const updateSettings = (data: Partial<AppSettings>): Promise<AppSettings> =>
+  fetchApi<{ data: AppSettings }>("/settings", { method: "PATCH", body: JSON.stringify(data) }).then((r) => r.data);

@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NpcsTab } from "@/components/tabs/npcs-tab";
 import { ToolsTab } from "@/components/tabs/tools-tab";
 import { SystemPromptsTab } from "@/components/tabs/system-prompts-tab";
+import { SettingsTab } from "@/components/tabs/settings-tab";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -28,10 +29,11 @@ export default function Home() {
       </div>
 
       <Tabs defaultValue="npcs" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8 h-12">
+        <TabsList className="grid w-full grid-cols-4 mb-8 h-12">
           <TabsTrigger value="npcs" className="text-base">NPCs Roster</TabsTrigger>
           <TabsTrigger value="tools" className="text-base">Tools Registry</TabsTrigger>
           <TabsTrigger value="prompts" className="text-base">Global Prompts</TabsTrigger>
+          <TabsTrigger value="settings" className="text-base">Settings</TabsTrigger>
         </TabsList>
 
         <div className="bg-card text-card-foreground shadow-sm rounded-xl border p-6 h-[calc(100vh-250px)] min-h-[600px] flex flex-col">
@@ -43,6 +45,9 @@ export default function Home() {
           </TabsContent>
           <TabsContent value="prompts" className="m-0 focus-visible:outline-none h-full data-[state=active]:flex flex-col min-h-0">
             <SystemPromptsTab />
+          </TabsContent>
+          <TabsContent value="settings" className="m-0 focus-visible:outline-none h-full data-[state=active]:flex flex-col min-h-0">
+            <SettingsTab />
           </TabsContent>
         </div>
       </Tabs>

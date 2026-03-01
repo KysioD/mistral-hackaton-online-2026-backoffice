@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Save, KeyRound, Cpu, Mic, Volume2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const MASK = "••••••••";
 
@@ -74,37 +74,58 @@ export function SettingsTab() {
   });
 
   const [formValues, setFormValues] = useState<Partial<AppSettings>>({});
+  const formValuesRef = useRef<Partial<AppSettings>>({});
   const [showSecret, setShowSecret] = useState<Record<string, boolean>>({});
+  const initialized = useRef(false);
 
-  // Populate form when data loads
+  // Populate form only once on first load — never overwrite user edits
   useEffect(() => {
-    if (data) {
+    if (data && !initialized.current) {
       setFormValues({ ...data });
+      formValuesRef.current = { ...data };
+      initialized.current = true;
     }
   }, [data]);
 
+  const handleChange = (key: keyof AppSettings, value: string) => {
+    setFormValues((prev) => {
+      const next = { ...prev, [key]: value };
+      formValuesRef.current = next;
+      return next;
+    });
+  };
+
+  // When user starts editing a secret field that still holds the mask, clear it first
+  const handleSecretFocus = (key: keyof AppSettings) => {
+    if (formValuesRef.current[key] === MASK) {
+      handleChange(key, "");
+    }
+  };
   const { mutate: save, isPending } = useMutation({
     mutationFn: updateSettings,
     onSuccess: (updated) => {
       queryClient.setQueryData(["settings"], updated);
-      setFormValues({ ...updated });
-      toast({ title: "Settings saved", description: "Your changes have been persisted to the .env file." });
+      // Only re-sync secret fields (they become masked after save); leave other fields as the user typed them
+      setFormValues((prev) => {
+        const next = { ...prev };
+        for (const key of (["MISTRAL_API_KEY", "ELEVENLABS_API_KEY"] as const)) {
+          next[key] = updated[key];
+        }
+        formValuesRef.current = next;
+        return next;
+      });
+      toast({ title: "Settings saved", description: "Changes applied immediately." });
     },
     onError: () => {
       toast({ title: "Failed to save settings", variant: "destructive" });
     },
   });
 
-  const handleChange = (key: keyof AppSettings, value: string) => {
-    setFormValues((prev) => ({ ...prev, [key]: value }));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Build patch: for secret fields, skip if still showing mask (user didn't touch them)
     const patch: Partial<AppSettings> = {};
     for (const field of FIELDS) {
-      const val = formValues[field.key] ?? "";
+      const val = formValuesRef.current[field.key] ?? "";
       patch[field.key] = val;
     }
     save(patch);
@@ -142,7 +163,7 @@ export function SettingsTab() {
         {FIELDS.map((field) => {
           const value = formValues[field.key] ?? "";
           const isVisible = showSecret[field.key] ?? false;
-          // Never show plaintext when the value is still the mask placeholder
+          // Never flip to text while the value is still the server-sent mask
           const inputType = field.isSecret && (!isVisible || value === MASK) ? "password" : "text";
 
           return (
@@ -158,6 +179,7 @@ export function SettingsTab() {
                   type={inputType}
                   value={value}
                   onChange={(e) => handleChange(field.key, e.target.value)}
+                  onFocus={() => field.isSecret && handleSecretFocus(field.key)}
                   placeholder={value === MASK ? "Currently set — enter a new value to change" : field.placeholder}
                   className={field.isSecret ? "pr-10 font-mono" : "font-mono"}
                   autoComplete="off"

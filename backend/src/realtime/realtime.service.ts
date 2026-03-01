@@ -9,7 +9,7 @@ import {
 import { TranscriptionStreamTextDelta } from '@mistralai/mistralai/models/components/transcriptionstreamtextdelta';
 import { TranscriptionStreamDone } from '@mistralai/mistralai/models/components/transcriptionstreamdone';
 
-const VOXTRAL_MODEL = process.env.VOXTRAL_MODEL ?? 'voxtral-mini-transcribe-realtime-2602';
+const DEFAULT_VOXTRAL_MODEL = 'voxtral-mini-transcribe-realtime-2602';
 
 interface ClientState {
   connection: RealtimeConnection | null;
@@ -21,17 +21,20 @@ interface ClientState {
 @Injectable()
 export class RealtimeService {
   private readonly logger = new Logger(RealtimeService.name);
-  private readonly realtimeClient: RealtimeTranscription;
   private clientStates: Map<WebSocket, ClientState> = new Map();
 
-  constructor() {
-    this.realtimeClient = new RealtimeTranscription({
+  private get voxtralModel(): string {
+    return process.env.VOXTRAL_MODEL ?? DEFAULT_VOXTRAL_MODEL;
+  }
+
+  private createRealtimeClient(): RealtimeTranscription {
+    return new RealtimeTranscription({
       apiKey: process.env.MISTRAL_API_KEY || '',
     });
   }
 
   async handleConnection(client: WebSocket) {
-    this.logger.log(`Client connected, establishing Voxtral session (model: ${VOXTRAL_MODEL})...`);
+    this.logger.log(`Client connected, establishing Voxtral session (model: ${this.voxtralModel})...`);
 
     const state: ClientState = { connection: null, connecting: true, audioChunkCount: 0, pendingAudio: [] };
     this.clientStates.set(client, state);
@@ -42,7 +45,7 @@ export class RealtimeService {
     });
 
     try {
-      const connection = await this.realtimeClient.connect(VOXTRAL_MODEL, {
+      const connection = await this.createRealtimeClient().connect(this.voxtralModel, {
         audioFormat: {
           encoding: AudioEncoding.PcmS16le,
           sampleRate: 16000,

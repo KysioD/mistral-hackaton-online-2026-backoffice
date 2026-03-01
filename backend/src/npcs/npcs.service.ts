@@ -475,10 +475,19 @@ export class NpcsService {
       try {
         ttsSession = this.elevenLabs.createSession(effectiveVoiceId!);
 
+        // If the npc-audio WS closes, forcefully terminate the ElevenLabs WS
+        const wsClientId = talkDto.clientId;
+        if (wsClientId) {
+          const capturedSession = ttsSession;
+          this.npcAudio.onClientDisconnect(wsClientId, () => {
+            this.logger.log(`npc-audio client ${wsClientId} disconnected — closing ElevenLabs session`);
+            capturedSession.close();
+          });
+        }
+
         // Concurrently drain audio chunks and deliver them:
         //  - over the dedicated WS connection if the caller supplied a clientId
         //  - over the HTTP response as a fallback (e.g. test_voice.py)
-        const wsClientId = talkDto.clientId;
         audioListenerDone = (async () => {
           try {
             for await (const audioChunk of ttsSession!.audioChunks) {

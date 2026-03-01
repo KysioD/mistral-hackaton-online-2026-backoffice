@@ -871,40 +871,40 @@ export function NpcsTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>First Name</TableHead>
-                <TableHead>Last Name</TableHead>
-                <TableHead>Prefab</TableHead>
-                <TableHead>Position</TableHead>
+                <TableHead className="w-[110px]">ID</TableHead>
+                <TableHead className="w-[120px]">First Name</TableHead>
+                <TableHead className="w-[120px]">Last Name</TableHead>
+                <TableHead className="w-[130px]">Prefab</TableHead>
+                <TableHead className="w-[200px]">Position</TableHead>
                 <TableHead>Tools</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[90px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data?.data?.map((npc) => (
-                <TableRow key={npc.id}>
+                <TableRow key={npc.id} className="align-middle">
                   <TableCell>
                     <div 
-                      className="flex items-center gap-2 cursor-pointer text-xs font-mono text-muted-foreground hover:text-foreground transition-colors"
+                      className="flex items-center gap-2 cursor-pointer text-xs font-mono text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
                       onClick={() => {
                         navigator.clipboard.writeText(npc.id);
                         toast({ title: "Copied!", description: "NPC ID copied to clipboard." });
                       }}
                       title="Click to copy ID"
                     >
-                      {npc.id.slice(0, 8)}... <Copy className="h-3 w-3" />
+                      {npc.id.slice(0, 8)}... <Copy className="h-3 w-3 shrink-0" />
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{npc.firstName}</TableCell>
-                  <TableCell>{npc.lastName}</TableCell>
-                  <TableCell><Badge variant="outline">{npc.prefab}</Badge></TableCell>
-                  <TableCell className="text-muted-foreground text-xs font-mono">
+                  <TableCell className="font-medium whitespace-nowrap">{npc.firstName}</TableCell>
+                  <TableCell className="whitespace-nowrap">{npc.lastName}</TableCell>
+                  <TableCell><Badge variant="outline" className="whitespace-nowrap">{npc.prefab}</Badge></TableCell>
+                  <TableCell className="text-muted-foreground text-xs font-mono whitespace-nowrap">
                     {npc.spawnX.toFixed(1)}, {npc.spawnY.toFixed(1)}, {npc.spawnZ.toFixed(1)} / {npc.spawnRotation}°
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {npc.tools?.slice(0, 3).map((nt) => <Badge key={nt.tool.id} variant="secondary" className="text-[10px]">{nt.tool.name}</Badge>)}
-                      {npc.tools && npc.tools.length > 3 && <Badge variant="secondary" className="text-[10px]">+{npc.tools.length - 3}</Badge>}
+                    <div className="flex flex-nowrap items-center gap-1">
+                      {npc.tools?.slice(0, 3).map((nt) => <Badge key={nt.tool.id} variant="secondary" className="text-[10px] whitespace-nowrap shrink-0">{nt.tool.name}</Badge>)}
+                      {npc.tools && npc.tools.length > 3 && <Badge variant="secondary" className="text-[10px] shrink-0">+{npc.tools.length - 3}</Badge>}
                     </div>
                   </TableCell>
                   <TableCell className="text-right space-x-2">

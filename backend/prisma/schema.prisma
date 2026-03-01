@@ -15,6 +15,13 @@ datasource db {
   extensions = [vector]
 }
 
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 model Tool {
   id          String          @id @default(cuid())
   name        String          @unique
