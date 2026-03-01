@@ -6,7 +6,15 @@
     },
     {
       "role": "user",
-      "content": "Bonjour, tavernier. Je voudrais afficher une notice de recrutement sur votre tableau. Je paie pour l'emplacement."
+      "content": "J'ai vu une affiche de recrutement dehors. Vous savez pour quelle mission ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Je n'affiche rien moi-même sur ma façade. Ce genre de choses attire les aventuriers."
+    },
+    {
+      "role": "user",
+      "content": "Pourtant elle y était. Vous pouvez me renseigner ?"
     },
     {
       "role": "assistant",
@@ -14,51 +22,9 @@
         {
           "type": "function",
           "function": {
-            "name": "inspect_player",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "inspect_player",
-      "content": "{\"appearance\": \"aventurière bien organisée, parchemin en main\", \"attitude\": \"professionnelle, pragmatique\", \"weapons_visible\": false, \"state\": \"sobre\", \"suspicious_items\": false}"
-    },
-    {
-      "role": "assistant",
-      "content": "Le tableau est pour les affaires du village — vaches perdues, récoltes à vendre, artisans qui cherchent apprentis. Pas pour attirer davantage d'aventuriers à Cormeil."
-    },
-    {
-      "role": "user",
-      "content": "Je pay deux pièces pour une semaine. C'est raisonnable, non ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Deux pièces pour une semaine d'aventuriers supplémentaires dans ma taverne — le calcul est mauvais pour moi. Mais je pourrais vous laisser une toute petite place en bas du tableau, si votre annonce reste sobre."
-    },
-    {
-      "role": "user",
-      "content": "Sobre, je peux faire ça. Juste : cherche deux épéistes expérimentés, mission région de Tharval, paye correcte. C'est tout."
-    },
-    {
-      "role": "assistant",
-      "content": "Ça me convient. Deux pièces, et l'annonce reste en bas — en dessous de la notice pour le bûcheron qui cherche un apprenti, qui est lui infiniment plus utile à ce village."
-    },
-    {
-      "role": "user",
-      "content": "Marché conclu. Je prends aussi quelque chose à boire."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "serve_drink",
+            "name": "sell_info",
             "arguments": {
-              "name": "Cidre local",
-              "price": 2
+              "price": 4
             }
           }
         }
@@ -66,106 +32,99 @@
     },
     {
       "role": "tool",
-      "name": "serve_drink",
-      "content": "{\"success\": true, \"message\": \"Cidre local servi pour 2 pièces.\"}"
+      "name": "sell_info",
+      "content": "{\"success\": true, \"prix\": 4, \"information\": \"Le seigneur Duval cherche quelqu'un pour escorter un convoi vers Grandéal. Départ dans trois jours. S'adresser à la mairie. Paiement à l'arrivée.\"}"
     },
     {
       "role": "assistant",
-      "content": "Deux pièces pour le cidre, plus deux pour le tableau — quatre pièces en tout. Et si vos recrues se comportent mal ici, l'annonce disparaît le lendemain."
-    },
-    {
-      "role": "user",
-      "content": "C'est juste. Si ça peut vous rassurer, je cherche des gens discrets et efficaces, pas des fêtards."
-    },
-    {
-      "role": "assistant",
-      "content": "Ça me rassure modérément — ils sont tous discrets jusqu'à leur troisième bière. Affachez votre notice et buvez votre cidre."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "close_conversation",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "close_conversation",
-      "content": "{\"success\": true}"
+      "content": "Quatre pièces. Seigneur Duval, convoi vers Grandéal, trois jours, mairie. Paiement conditionnel — comme toujours avec les seigneurs."
     }
   ],
   "tools": [
     {
       "type": "function",
       "function": {
-        "name": "inspect_player",
-        "description": "Observer et évaluer l'apparence et l'attitude du joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "list_menu",
-        "description": "Lister les boissons, plats et chambres disponibles.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "serve_drink",
-        "description": "Servir une boisson au joueur.",
+        "name": "sell_drink",
+        "description": "Vendre une boisson au joueur en échange de pièces.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            },
+            "price": {
+              "type": "number",
+              "description": "Le prix en pièces."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name",
+            "price"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "serve_food",
-        "description": "Servir un plat au joueur.",
+        "name": "give_drink",
+        "description": "Donner une boisson gratuitement au joueur.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "rent_room",
-        "description": "Louer une chambre au joueur pour la nuit.",
+        "name": "list_drinks",
+        "description": "Lister les boissons disponibles à la taverne.",
         "parameters": {
           "type": "object",
-          "properties": {
-            "price": {"type": "number"}
-          },
-          "required": ["price"]
+          "properties": {},
+          "required": []
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "close_conversation",
-        "description": "Clore la conversation avec le joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
+        "name": "list_info",
+        "description": "Lister les informations disponibles sur Edgar et la taverne.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "sell_info",
+        "description": "Vendre une information ou un renseignement au joueur en échange de pièces.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "price": {
+              "type": "number",
+              "description": "Le prix de l'information en pièces."
+            }
+          },
+          "required": [
+            "price"
+          ]
+        }
       }
     }
   ]

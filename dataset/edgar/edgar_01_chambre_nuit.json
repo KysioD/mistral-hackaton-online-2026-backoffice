@@ -6,11 +6,7 @@
     },
     {
       "role": "user",
-      "content": "Bonsoir ! Je cherche une chambre pour la nuit. Vous en avez de disponibles ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Encore un. Attendez là que je vous regarde avant de décider si j'ai envie de vous loger sous mon toit."
+      "content": "Bonsoir. J'aurais besoin d'une chambre pour ce soir et quelque chose à boire."
     },
     {
       "role": "assistant",
@@ -18,7 +14,7 @@
         {
           "type": "function",
           "function": {
-            "name": "inspect_player",
+            "name": "list_info",
             "arguments": {}
           }
         }
@@ -26,28 +22,16 @@
     },
     {
       "role": "tool",
-      "name": "inspect_player",
-      "content": "{\"appearance\": \"aventurier équipé\", \"attitude\": \"décontractée\", \"weapons_visible\": true, \"state\": \"fatigué mais propre\", \"suspicious_items\": false}"
+      "name": "list_info",
+      "content": "{\"nom\": \"Edgar de Cormeil\", \"profession\": \"Tavernier\", \"etablissement\": \"La Taverne du Corbeau, Cormeil\", \"frere\": \"Célestin de Cormeil (hébergé temporairement après l'incendie de sa chaumière)\", \"opinion_aventuriers\": \"Profondément négatif — bruyants, impolis et dangereux\", \"specialite\": \"Bière brune maison et renseignements discrets\", \"horaires\": \"Ouvert du lever au coucher du soleil, et encore\"}"
     },
     {
       "role": "assistant",
-      "content": "Propre, c'est déjà ça. Vous avez l'armement d'un aventurier et la tête de quelqu'un qui a marché toute la journée — je me trompe rarement."
+      "content": "Nous ne louons pas de chambres — c'est une taverne, pas une auberge. Mais je vends des boissons, et ça, j'en ai."
     },
     {
       "role": "user",
-      "content": "C'est exact. Combien pour une chambre ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Huit pièces la nuit, petit-déjeuner non compris. Épée dans le fourreau en permanence, pas de feu de camp dans la chambre — oui, j'ai dû le préciser deux fois cette année."
-    },
-    {
-      "role": "user",
-      "content": "C'est raisonnable. Je prends une chambre."
-    },
-    {
-      "role": "assistant",
-      "content": "Vous avez de la chance, il m'en reste une. Et c'est la chambre du fond — loin des chambres des villageois honnêtes."
+      "content": "Ah... une bière alors, si vous en avez."
     },
     {
       "role": "assistant",
@@ -55,9 +39,10 @@
         {
           "type": "function",
           "function": {
-            "name": "rent_room",
+            "name": "sell_drink",
             "arguments": {
-              "price": 8
+              "name": "Bière brune",
+              "price": 2
             }
           }
         }
@@ -65,101 +50,20 @@
     },
     {
       "role": "tool",
-      "name": "rent_room",
-      "content": "{\"success\": true, \"message\": \"Chambre louée pour la nuit, 8 pièces.\"}"
+      "name": "sell_drink",
+      "content": "{\"success\": true, \"boisson\": \"Bière brune\", \"prix\": 2, \"message\": \"Bière brune servi(e). 2 pièce(s) déduites.\"}"
     },
     {
       "role": "assistant",
-      "content": "Huit pièces. Le dîner se sert jusqu'à la cloche de neuvième heure — après, vous vous débrouillez."
-    },
-    {
-      "role": "user",
-      "content": "Et pour manger ce soir ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Il reste du ragoût de porc et du pain. Ce n'est pas une auberge de ville, alors ne faites pas la grimace — ma femme est meilleure cuisinière que la vôtre, j'en suis sûr."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "serve_food",
-            "arguments": {
-              "name": "Ragoût de porc",
-              "price": 3
-            }
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "serve_food",
-      "content": "{\"success\": true, \"message\": \"Ragoût de porc servi pour 3 pièces.\"}"
-    },
-    {
-      "role": "assistant",
-      "content": "Trois pièces. Et si vous faites du bruit après la dixième heure, c'est Célestin qui vient toquer à votre porte — et lui, il est moins poli que moi."
-    },
-    {
-      "role": "user",
-      "content": "Célestin ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Mon frère. Il loge ici depuis que des inconscients ont mis le feu au village il y a trois semaines — des aventuriers, tiens donc. Bonne nuit."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "close_conversation",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "close_conversation",
-      "content": "{\"success\": true}"
+      "content": "Deux pièces. Et essayez de ne pas mettre de coudes sur le comptoir — c'est du bois ciré."
     }
   ],
   "tools": [
     {
       "type": "function",
       "function": {
-        "name": "inspect_player",
-        "description": "Observer et évaluer l'apparence et l'attitude du joueur.",
-        "parameters": {
-          "type": "object",
-          "properties": {},
-          "required": []
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "list_menu",
-        "description": "Lister les boissons, plats et chambres disponibles à la taverne.",
-        "parameters": {
-          "type": "object",
-          "properties": {},
-          "required": []
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "serve_drink",
-        "description": "Servir une boisson au joueur.",
+        "name": "sell_drink",
+        "description": "Vendre une boisson au joueur en échange de pièces.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -172,57 +76,72 @@
               "description": "Le prix en pièces."
             }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name",
+            "price"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "serve_food",
-        "description": "Servir un plat au joueur.",
+        "name": "give_drink",
+        "description": "Donner une boisson gratuitement au joueur.",
         "parameters": {
           "type": "object",
           "properties": {
             "name": {
               "type": "string",
-              "description": "Le nom du plat."
-            },
-            "price": {
-              "type": "number",
-              "description": "Le prix en pièces."
+              "description": "Le nom de la boisson."
             }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "rent_room",
-        "description": "Louer une chambre au joueur pour la nuit.",
+        "name": "list_drinks",
+        "description": "Lister les boissons disponibles à la taverne.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "list_info",
+        "description": "Lister les informations disponibles sur Edgar et la taverne.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "sell_info",
+        "description": "Vendre une information ou un renseignement au joueur en échange de pièces.",
         "parameters": {
           "type": "object",
           "properties": {
             "price": {
               "type": "number",
-              "description": "Le prix de la chambre en pièces."
+              "description": "Le prix de l'information en pièces."
             }
           },
-          "required": ["price"]
-        }
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "close_conversation",
-        "description": "Clore la conversation avec le joueur.",
-        "parameters": {
-          "type": "object",
-          "properties": {},
-          "required": []
+          "required": [
+            "price"
+          ]
         }
       }
     }

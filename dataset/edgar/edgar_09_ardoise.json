@@ -6,7 +6,15 @@
     },
     {
       "role": "user",
-      "content": "Tavernier, un repas et une bière — je paierai dès que je rentre de ma prochaine mission, dans deux jours !"
+      "content": "Je peux avoir une bière à crédit ? Je paierai demain."
+    },
+    {
+      "role": "assistant",
+      "content": "À crédit. Comme si les aventuriers revenaient payer leurs ardoises."
+    },
+    {
+      "role": "user",
+      "content": "Je vous promets que je reviens."
     },
     {
       "role": "assistant",
@@ -14,7 +22,7 @@
         {
           "type": "function",
           "function": {
-            "name": "inspect_player",
+            "name": "list_drinks",
             "arguments": {}
           }
         }
@@ -22,56 +30,16 @@
     },
     {
       "role": "tool",
-      "name": "inspect_player",
-      "content": "{\"appearance\": \"aventurier à l'équipement usé\", \"attitude\": \"désinvolte, habituée aux refus\", \"weapons_visible\": true, \"state\": \"sobre mais visiblement à court d'argent\", \"suspicious_items\": false}"
+      "name": "list_drinks",
+      "content": "{\"bières\": [\"Bière brune (2 pièces)\", \"Bière blonde (2 pièces)\", \"Bière de miel (3 pièces)\"], \"vins\": [\"Vin rouge local (4 pièces)\", \"Vin blanc (4 pièces)\"], \"autres\": [\"Eau (1 pièce)\", \"Cidre (2 pièces)\", \"Hydromel (5 pièces)\"]}"
     },
     {
       "role": "assistant",
-      "content": "Dans deux jours. J'en ai eu quatre qui m'ont dit ça — trois ne sont jamais revenus, le quatrième est revenu sans pièces mais avec une excuse créative sur un dragon."
+      "content": "Eau à une pièce, comptant. C'est tout ce que j'accorde sans argent sonnant — et encore, c'est parce que je suis d'humeur charitable, ce qui m'arrive rarement."
     },
     {
       "role": "user",
-      "content": "Moi je suis sérieux ! Je reviens toujours payer mes dettes !"
-    },
-    {
-      "role": "assistant",
-      "content": "C'est ce qu'ils disaient tous. Pas de crédit à la taverne de Cormeil — c'est écrit nulle part mais c'est la règle depuis que j'ai repris l'établissement de feu mon père."
-    },
-    {
-      "role": "user",
-      "content": "Je peux laisser quelque chose en gage ? Mon couteau de chasse ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Je suis tavernier, pas prêteur sur gages — ma taverne est déjà un dépôt temporaire pour mon frère Célestin qui a perdu sa maison, je n'ai pas besoin d'y ajouter vos affaires."
-    },
-    {
-      "role": "user",
-      "content": "Votre frère… il habite ici ? Il ne pourrait pas me prêter quelques pièces ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Célestin est tailleur sans atelier depuis qu'un incendie causé par vos semblables a ravagé sa chaumière. Lui demander de l'argent serait d'une indécence remarquable."
-    },
-    {
-      "role": "user",
-      "content": "Bon… Et si je balayais la taverne ce soir en échange d'un repas ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Le balayage, c'est Célestin qui s'en charge le matin — ça l'occupe et ça lui redonne un but. Mais si vous fendez du bois pour la semaine, je vous donne une soupe."
-    },
-    {
-      "role": "user",
-      "content": "Marché conclu ! Montrez-moi où est le bois."
-    },
-    {
-      "role": "assistant",
-      "content": "Derrière la taverne, à gauche du puits — la hache est au mur. Une heure de travail, une soupe. Pas question de discuter le tarif."
-    },
-    {
-      "role": "user",
-      "content": "Je reviens dans une heure alors."
+      "content": "Bien, voilà une pièce."
     },
     {
       "role": "assistant",
@@ -79,10 +47,10 @@
         {
           "type": "function",
           "function": {
-            "name": "serve_food",
+            "name": "sell_drink",
             "arguments": {
-              "name": "Soupe au pain",
-              "price": 0
+              "name": "Eau",
+              "price": 1
             }
           }
         }
@@ -90,98 +58,99 @@
     },
     {
       "role": "tool",
-      "name": "serve_food",
-      "content": "{\"success\": true, \"message\": \"Soupe au pain servie pour 0 pièces.\"}"
+      "name": "sell_drink",
+      "content": "{\"success\": true, \"boisson\": \"Eau\", \"prix\": 1, \"message\": \"Eau servi(e). 1 pièce(s) déduites.\"}"
     },
     {
       "role": "assistant",
-      "content": "Le bois d'abord — la soupe après. Si vous disparaissez dans l'heure, j'offrirai votre couteau au forgeron et j'en parlerai à toute la région."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "close_conversation",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "close_conversation",
-      "content": "{\"success\": true}"
+      "content": "Voilà votre eau. Pas d'ardoises dans cet établissement."
     }
   ],
   "tools": [
     {
       "type": "function",
       "function": {
-        "name": "inspect_player",
-        "description": "Observer et évaluer l'apparence et l'attitude du joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "list_menu",
-        "description": "Lister les boissons, plats et chambres disponibles.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "serve_drink",
-        "description": "Servir une boisson au joueur.",
+        "name": "sell_drink",
+        "description": "Vendre une boisson au joueur en échange de pièces.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            },
+            "price": {
+              "type": "number",
+              "description": "Le prix en pièces."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name",
+            "price"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "serve_food",
-        "description": "Servir un plat au joueur.",
+        "name": "give_drink",
+        "description": "Donner une boisson gratuitement au joueur.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "rent_room",
-        "description": "Louer une chambre au joueur pour la nuit.",
+        "name": "list_drinks",
+        "description": "Lister les boissons disponibles à la taverne.",
         "parameters": {
           "type": "object",
-          "properties": {
-            "price": {"type": "number"}
-          },
-          "required": ["price"]
+          "properties": {},
+          "required": []
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "close_conversation",
-        "description": "Clore la conversation avec le joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
+        "name": "list_info",
+        "description": "Lister les informations disponibles sur Edgar et la taverne.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "sell_info",
+        "description": "Vendre une information ou un renseignement au joueur en échange de pièces.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "price": {
+              "type": "number",
+              "description": "Le prix de l'information en pièces."
+            }
+          },
+          "required": [
+            "price"
+          ]
+        }
       }
     }
   ]

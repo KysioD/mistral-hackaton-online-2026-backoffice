@@ -6,7 +6,15 @@
     },
     {
       "role": "user",
-      "content": "Eh tavernier ! Regardez ce que j'ai ramené ! Une tête de troll des marais ! Grande comme ça !"
+      "content": "Je viens de tuer un loup-garou ! Offrez-moi une bière, non ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Je ne suis pas dans l'habitude d'offrir des boissons pour des exploits que je n'ai pas vérifiés."
+    },
+    {
+      "role": "user",
+      "content": "Enfin, c'est quand même un exploit !"
     },
     {
       "role": "assistant",
@@ -14,59 +22,9 @@
         {
           "type": "function",
           "function": {
-            "name": "inspect_player",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "inspect_player",
-      "content": "{\"appearance\": \"aventurier triomphant, couvert de vase\", \"attitude\": \"exubérante, fière\", \"weapons_visible\": true, \"state\": \"énergique mais sale\", \"suspicious_items\": true}"
-    },
-    {
-      "role": "assistant",
-      "content": "Vous êtes couvert de vase jusqu'aux genoux et vous portez une chose qui pue dans mon établissement — sortez ça immédiatement."
-    },
-    {
-      "role": "user",
-      "content": "Mais c'est un trophée ! Les gens vont adorer, ça attire les clients !"
-    },
-    {
-      "role": "assistant",
-      "content": "Les clients que j'ai envie d'attirer, ce sont des villageois qui mangent proprement et rentrent chez eux sans déclencher d'incendie. Une tête de troll attire des aventuriers — j'en ai déjà trop."
-    },
-    {
-      "role": "user",
-      "content": "Allez, juste cette nuit ! Je la laisse dehors si vous voulez !"
-    },
-    {
-      "role": "assistant",
-      "content": "Dehors, d'accord. Et vous, vous entrez seulement après vous être essuyé les bottes — le paillasson est là pour une raison."
-    },
-    {
-      "role": "user",
-      "content": "D'accord, d'accord. Une bière alors, pour fêter ma victoire ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Si la tête est dehors et vos bottes sont nettoyées, oui. Sans quoi vous fêtez ça dans la rue."
-    },
-    {
-      "role": "user",
-      "content": "C'est fait ! Voilà, bottes propres, trophée dehors."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "serve_drink",
+            "name": "give_drink",
             "arguments": {
-              "name": "Bière blonde",
-              "price": 2
+              "name": "Bière brune"
             }
           }
         }
@@ -74,137 +32,99 @@
     },
     {
       "role": "tool",
-      "name": "serve_drink",
-      "content": "{\"success\": true, \"message\": \"Bière blonde servie pour 2 pièces.\"}"
+      "name": "give_drink",
+      "content": "{\"success\": true, \"boisson\": \"Bière brune\", \"prix\": 0, \"message\": \"Bière brune donné(e) gratuitement.\"}"
     },
     {
       "role": "assistant",
-      "content": "Deux pièces. Et si votre trophée disparaît cette nuit parce qu'un chien l'a emporté, c'est vos affaires — pas les miennes."
-    },
-    {
-      "role": "user",
-      "content": "Vous pouvez pas le garder dans la réserve ? Juste pour la nuit ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Mon frère Célestin dort à deux mètres de la réserve depuis que sa chaumière a brûlé — il n'a pas besoin de dormir à côté d'une tête de troll. La réponse est non."
-    },
-    {
-      "role": "user",
-      "content": "Bon… Je vais dormir ici quand même ? J'ai besoin d'une chambre."
-    },
-    {
-      "role": "assistant",
-      "content": "La chambre coûte huit pièces. Vous prenez un bain dans le puits avant de monter — je vous passe le seau gratuitement car je ne veux pas que mes draps sentent le marais."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "rent_room",
-            "arguments": {
-              "price": 8
-            }
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "rent_room",
-      "content": "{\"success\": true, \"message\": \"Chambre louée pour la nuit, 8p.\"}"
-    },
-    {
-      "role": "assistant",
-      "content": "Huit pièces. Le trophée reste dehors — toute la nuit, sans exception."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "close_conversation",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "close_conversation",
-      "content": "{\"success\": true}"
+      "content": "Une bière brune. Pas parce que je vous crois — parce que ça m'évitera d'entendre l'histoire en détail. Buvez et taisez-vous."
     }
   ],
   "tools": [
     {
       "type": "function",
       "function": {
-        "name": "inspect_player",
-        "description": "Observer et évaluer l'apparence et l'attitude du joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "list_menu",
-        "description": "Lister les boissons, plats et chambres disponibles.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "serve_drink",
-        "description": "Servir une boisson au joueur.",
+        "name": "sell_drink",
+        "description": "Vendre une boisson au joueur en échange de pièces.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            },
+            "price": {
+              "type": "number",
+              "description": "Le prix en pièces."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name",
+            "price"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "serve_food",
-        "description": "Servir un plat au joueur.",
+        "name": "give_drink",
+        "description": "Donner une boisson gratuitement au joueur.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "rent_room",
-        "description": "Louer une chambre au joueur pour la nuit.",
+        "name": "list_drinks",
+        "description": "Lister les boissons disponibles à la taverne.",
         "parameters": {
           "type": "object",
-          "properties": {
-            "price": {"type": "number"}
-          },
-          "required": ["price"]
+          "properties": {},
+          "required": []
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "close_conversation",
-        "description": "Clore la conversation avec le joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
+        "name": "list_info",
+        "description": "Lister les informations disponibles sur Edgar et la taverne.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "sell_info",
+        "description": "Vendre une information ou un renseignement au joueur en échange de pièces.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "price": {
+              "type": "number",
+              "description": "Le prix de l'information en pièces."
+            }
+          },
+          "required": [
+            "price"
+          ]
+        }
       }
     }
   ]

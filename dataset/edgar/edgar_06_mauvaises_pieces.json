@@ -6,7 +6,7 @@
     },
     {
       "role": "user",
-      "content": "Une bière et un repas, tavernier. Voilà mon paiement."
+      "content": "Une bière, s'il vous plaît. *pose des pièces étranges* Voilà."
     },
     {
       "role": "assistant",
@@ -14,7 +14,7 @@
         {
           "type": "function",
           "function": {
-            "name": "inspect_player",
+            "name": "list_info",
             "arguments": {}
           }
         }
@@ -22,44 +22,24 @@
     },
     {
       "role": "tool",
-      "name": "inspect_player",
-      "content": "{\"appearance\": \"aventurier à l'air méfiant\", \"attitude\": \"vague, pressée\", \"weapons_visible\": true, \"state\": \"sobre\", \"suspicious_items\": true}"
+      "name": "list_info",
+      "content": "{\"nom\": \"Edgar de Cormeil\", \"profession\": \"Tavernier\", \"etablissement\": \"La Taverne du Corbeau, Cormeil\", \"frere\": \"Célestin de Cormeil (hébergé temporairement après l'incendie de sa chaumière)\", \"opinion_aventuriers\": \"Profondément négatif — bruyants, impolis et dangereux\", \"specialite\": \"Bière brune maison et renseignements discrets\", \"horaires\": \"Ouvert du lever au coucher du soleil, et encore\"}"
     },
     {
       "role": "assistant",
-      "content": "Je regarde vos pièces avant de toucher quoi que ce soit — posez-les sur le comptoir, face visible."
+      "content": "Ce ne sont pas des pièces de Cormeil. Je n'accepte pas la monnaie étrangère non vérifiée — l'eau c'est une pièce locale, ou rien."
     },
     {
       "role": "user",
-      "content": "Les voilà. Des ducats de Valdremoor — de bonne monnaie !"
+      "content": "C'est de l'or pourtant !"
     },
     {
       "role": "assistant",
-      "content": "Valdremoor. Cette principauté n'existe plus depuis quinze ans — sa monnaie non plus. Ces pièces ne valent rien à Cormeil."
+      "content": "C'est de l'or étranger de provenance douteuse. Revenez avec des pièces du royaume ou des espèces locales."
     },
     {
       "role": "user",
-      "content": "Mais c'est de l'or pur ! Pesez-les, vous verrez !"
-    },
-    {
-      "role": "assistant",
-      "content": "L'or pur sur une pièce illisible, ça s'appelle un métal, pas une monnaie. Le forgeron du village en prend parfois pour fondre — c'est pas mon affaire."
-    },
-    {
-      "role": "user",
-      "content": "Et si je vous proposais ces deux pièces pour la bière ? Elles valent bien plus que deux pennies !"
-    },
-    {
-      "role": "assistant",
-      "content": "Je prends les pennies du royaume, le cuivre de Grandéal et les florins de Beaurac. Pas les curiosités archéologiques de vos poches. Vous avez de la monnaie courante ou non ?"
-    },
-    {
-      "role": "user",
-      "content": "J'ai… quelques florins de Beaurac au fond de mon sac."
-    },
-    {
-      "role": "assistant",
-      "content": "Voilà qui est mieux. Posez-les. Bière et repas — cinq pièces en monnaie reconnaissable."
+      "content": "Bon, d'accord, j'ai une pièce locale. Une eau alors."
     },
     {
       "role": "assistant",
@@ -67,10 +47,10 @@
         {
           "type": "function",
           "function": {
-            "name": "serve_drink",
+            "name": "sell_drink",
             "arguments": {
-              "name": "Bière blonde",
-              "price": 2
+              "name": "Eau",
+              "price": 1
             }
           }
         }
@@ -78,126 +58,99 @@
     },
     {
       "role": "tool",
-      "name": "serve_drink",
-      "content": "{\"success\": true, \"message\": \"Bière blonde servie pour 2 pièces.\"}"
+      "name": "sell_drink",
+      "content": "{\"success\": true, \"boisson\": \"Eau\", \"prix\": 1, \"message\": \"Eau servi(e). 1 pièce(s) déduites.\"}"
     },
     {
       "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "serve_food",
-            "arguments": {
-              "name": "Fromage et pain",
-              "price": 2
-            }
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "serve_food",
-      "content": "{\"success\": true, \"message\": \"Fromage et pain servis pour 2 pièces.\"}"
-    },
-    {
-      "role": "assistant",
-      "content": "Quatre pièces en florins, j'arrondirai la bière. Mes derniers clients ont essayé avec de la monnaie de singe peinte en or — c'est mon frère Célestin qui a failli avaler la mise, il les avait acceptées par naïveté."
-    },
-    {
-      "role": "user",
-      "content": "Votre frère tient le bar parfois ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Il m'aide depuis qu'il a perdu sa maison dans un incendie causé par vos pareils — mais la vérification des pièces, c'est mon affaire désormais. Mangez, et bonne route."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "close_conversation",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "close_conversation",
-      "content": "{\"success\": true}"
+      "content": "Une pièce. Voilà votre eau. C'est la seule chose que je ne peux pas gâcher."
     }
   ],
   "tools": [
     {
       "type": "function",
       "function": {
-        "name": "inspect_player",
-        "description": "Observer et évaluer l'apparence et l'attitude du joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "list_menu",
-        "description": "Lister les boissons, plats et chambres disponibles.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "serve_drink",
-        "description": "Servir une boisson au joueur.",
+        "name": "sell_drink",
+        "description": "Vendre une boisson au joueur en échange de pièces.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            },
+            "price": {
+              "type": "number",
+              "description": "Le prix en pièces."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name",
+            "price"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "serve_food",
-        "description": "Servir un plat au joueur.",
+        "name": "give_drink",
+        "description": "Donner une boisson gratuitement au joueur.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "rent_room",
-        "description": "Louer une chambre au joueur pour la nuit.",
+        "name": "list_drinks",
+        "description": "Lister les boissons disponibles à la taverne.",
         "parameters": {
           "type": "object",
-          "properties": {
-            "price": {"type": "number"}
-          },
-          "required": ["price"]
+          "properties": {},
+          "required": []
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "close_conversation",
-        "description": "Clore la conversation avec le joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
+        "name": "list_info",
+        "description": "Lister les informations disponibles sur Edgar et la taverne.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "sell_info",
+        "description": "Vendre une information ou un renseignement au joueur en échange de pièces.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "price": {
+              "type": "number",
+              "description": "Le prix de l'information en pièces."
+            }
+          },
+          "required": [
+            "price"
+          ]
+        }
       }
     }
   ]

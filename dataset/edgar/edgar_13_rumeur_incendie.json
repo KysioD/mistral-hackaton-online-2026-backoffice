@@ -6,7 +6,15 @@
     },
     {
       "role": "user",
-      "content": "Bonsoir, tavernier. J'ai entendu parler d'un incendie qui a ravagé ce village il y a quelques semaines. Vous pouvez m'en dire plus ?"
+      "content": "On dit que c'est pas un accident, l'incendie de la chaumière. On dit que c'était intentionnel."
+    },
+    {
+      "role": "assistant",
+      "content": "On dit beaucoup de choses dans les tavernes. Surtout des bêtises."
+    },
+    {
+      "role": "user",
+      "content": "Vous en savez plus ?"
     },
     {
       "role": "assistant",
@@ -14,43 +22,9 @@
         {
           "type": "function",
           "function": {
-            "name": "inspect_player",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "inspect_player",
-      "content": "{\"appearance\": \"aventurière à l'air investigateur, carnet et plume visible\", \"attitude\": \"curieuse, méthodique\", \"weapons_visible\": false, \"state\": \"sobre\", \"suspicious_items\": false}"
-    },
-    {
-      "role": "assistant",
-      "content": "Ce n'était pas le village — c'était la chaumière de mon frère Célestin, et il dort dans mon débarras depuis lors. Pourquoi vous voulez savoir ça ?"
-    },
-    {
-      "role": "user",
-      "content": "Je documente les incidents liés aux aventuriers dans la région — pour un rapport au baron."
-    },
-    {
-      "role": "assistant",
-      "content": "Un rapport au baron. Commandez quelque chose et je vous raconte — rester debout à écouter mes malheurs sans consommer, c'est pas ma façon de faire."
-    },
-    {
-      "role": "user",
-      "content": "Un cidre, alors."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "serve_drink",
+            "name": "sell_info",
             "arguments": {
-              "name": "Cidre local",
-              "price": 2
+              "price": 8
             }
           }
         }
@@ -58,122 +32,107 @@
     },
     {
       "role": "tool",
-      "name": "serve_drink",
-      "content": "{\"success\": true, \"message\": \"Cidre local servi pour 2 pièces.\"}"
+      "name": "sell_info",
+      "content": "{\"success\": true, \"prix\": 8, \"information\": \"Il y avait effectivement quelqu'un rôdant autour de la chaumière la nuit du feu, selon le voisin Tomas. Mais rien de prouvé. Edgar refuse d'en parler habituellement.\"}"
     },
     {
       "role": "assistant",
-      "content": "Deux pièces. L'incendie : un groupe de quatre aventuriers, une dispute autour d'un partage de butin sur le seuil de la chaumière de Célestin, une torche mal tenue, et voilà — trente ans de travail partis en fumée en une heure."
+      "content": "Huit pièces — et vous n'avez entendu ça nulle part. Rôdeur non identifié, rien de prouvé, Célestin ne sait pas."
     },
     {
       "role": "user",
-      "content": "Ces aventuriers ont été identifiés ? Ils ont été poursuivis ?"
+      "content": "Intéressant. Merci."
     },
     {
       "role": "assistant",
-      "content": "Identifiés par Célestin lui-même — l'un s'appelait Morvan le Rapide, les autres je ne sais plus. Le garde du village a pris note, le baron a envoyé une lettre, et rien d'autre n'est venu depuis."
-    },
-    {
-      "role": "user",
-      "content": "Je vais inclure ça dans mon rapport. Votre frère accepterait de témoigner ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Célestin témoigne volontiers — il est juste là, derrière, à repriser des vêtements puisqu'il n'a plus d'atelier. Adressez-vous directement à lui si vous avez assez de respect pour lui parler à lui."
-    },
-    {
-      "role": "user",
-      "content": "Merci pour les informations. Je lui parlerai."
-    },
-    {
-      "role": "assistant",
-      "content": "Tant que votre rapport change vraiment quelque chose — sinon vous serez une aventurière de plus qui a noté des mots sur du papier pendant que Célestin dort dans un débarras."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "close_conversation",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "close_conversation",
-      "content": "{\"success\": true}"
+      "content": "Intéressant et confidentiel. Une bière pour vous aider à garder ça pour vous ?"
     }
   ],
   "tools": [
     {
       "type": "function",
       "function": {
-        "name": "inspect_player",
-        "description": "Observer et évaluer l'apparence et l'attitude du joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "list_menu",
-        "description": "Lister les boissons, plats et chambres disponibles.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "serve_drink",
-        "description": "Servir une boisson au joueur.",
+        "name": "sell_drink",
+        "description": "Vendre une boisson au joueur en échange de pièces.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            },
+            "price": {
+              "type": "number",
+              "description": "Le prix en pièces."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name",
+            "price"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "serve_food",
-        "description": "Servir un plat au joueur.",
+        "name": "give_drink",
+        "description": "Donner une boisson gratuitement au joueur.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "rent_room",
-        "description": "Louer une chambre au joueur pour la nuit.",
+        "name": "list_drinks",
+        "description": "Lister les boissons disponibles à la taverne.",
         "parameters": {
           "type": "object",
-          "properties": {
-            "price": {"type": "number"}
-          },
-          "required": ["price"]
+          "properties": {},
+          "required": []
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "close_conversation",
-        "description": "Clore la conversation avec le joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
+        "name": "list_info",
+        "description": "Lister les informations disponibles sur Edgar et la taverne.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "sell_info",
+        "description": "Vendre une information ou un renseignement au joueur en échange de pièces.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "price": {
+              "type": "number",
+              "description": "Le prix de l'information en pièces."
+            }
+          },
+          "required": [
+            "price"
+          ]
+        }
       }
     }
   ]

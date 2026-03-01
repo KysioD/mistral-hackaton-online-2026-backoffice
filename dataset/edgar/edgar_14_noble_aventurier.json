@@ -6,7 +6,7 @@
     },
     {
       "role": "user",
-      "content": "Holà, manant ! Je suis le vicomte Aldric de Peyremars, défenseur des terres du nord. Je désire la meilleure chambre de cet établissement et un repas digne de mon rang !"
+      "content": "Je suis le chevalier Aldric de Fontmerle. Vous avez du vin convenable ?"
     },
     {
       "role": "assistant",
@@ -14,7 +14,7 @@
         {
           "type": "function",
           "function": {
-            "name": "inspect_player",
+            "name": "list_drinks",
             "arguments": {}
           }
         }
@@ -22,32 +22,16 @@
     },
     {
       "role": "tool",
-      "name": "inspect_player",
-      "content": "{\"appearance\": \"aventurier en armure semi-polie, insigne de noblesse douteuse\", \"attitude\": \"condescendante, théâtrale\", \"weapons_visible\": true, \"state\": \"sobre, très sûr de lui\", \"suspicious_items\": false}"
+      "name": "list_drinks",
+      "content": "{\"bières\": [\"Bière brune (2 pièces)\", \"Bière blonde (2 pièces)\", \"Bière de miel (3 pièces)\"], \"vins\": [\"Vin rouge local (4 pièces)\", \"Vin blanc (4 pièces)\"], \"autres\": [\"Eau (1 pièce)\", \"Cidre (2 pièces)\", \"Hydromel (5 pièces)\"]}"
     },
     {
       "role": "assistant",
-      "content": "Vicomte. La meilleure chambre est la seule chambre, elle coûte huit pièces, et le meilleur repas c'est le ragoût à trois pièces — «digne de rang» ou pas, c'est tout ce que j'ai."
+      "content": "Vin rouge local à quatre pièces, vin blanc à quatre pièces. Ce n'est pas du grand cru mais c'est honnête."
     },
     {
       "role": "user",
-      "content": "Inadmissible ! Un vicomte mérite bien mieux que ça ! Avez-vous du gibier ? Du vin fin ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Du vin de table à trois pièces et du ragoût de porc — c'est la carte. Un vicomte qui arrive sans domestique ni bagages dans une taverne de village peut s'estimer content d'avoir un toit."
-    },
-    {
-      "role": "user",
-      "content": "Je me plains au bailli ! Vous n'avez aucun respect de la hiérarchie !"
-    },
-    {
-      "role": "assistant",
-      "content": "Le bailli mange ici le mardi — il prend le ragoût et en est satisfait, ce qui suffit à me convaincre que j'ai le bon menu. Chambre et repas, ou dehors ?"
-    },
-    {
-      "role": "user",
-      "content": "Soit. Je prendrai la chambre. Et du vin, puisque c'est tout ce que vous proposez."
+      "content": "Le rouge, alors."
     },
     {
       "role": "assistant",
@@ -55,9 +39,10 @@
         {
           "type": "function",
           "function": {
-            "name": "rent_room",
+            "name": "sell_drink",
             "arguments": {
-              "price": 8
+              "name": "Vin rouge local",
+              "price": 4
             }
           }
         }
@@ -65,126 +50,99 @@
     },
     {
       "role": "tool",
-      "name": "rent_room",
-      "content": "{\"success\": true, \"message\": \"Chambre louée pour la nuit, 8p.\"}"
+      "name": "sell_drink",
+      "content": "{\"success\": true, \"boisson\": \"Vin rouge local\", \"prix\": 4, \"message\": \"Vin rouge local servi(e). 4 pièce(s) déduites.\"}"
     },
     {
       "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "serve_drink",
-            "arguments": {
-              "name": "Vin de table rouge",
-              "price": 3
-            }
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "serve_drink",
-      "content": "{\"success\": true, \"message\": \"Vin de table rouge servi pour 3 pièces.\"}"
-    },
-    {
-      "role": "assistant",
-      "content": "Onze pièces en tout. Mon frère Célestin occupait autrefois la seule autre pièce à l'étage, mais elle a brûlé avec sa chaumière — il dort dans le débarras, vous, vous avez la chambre. Ironique."
-    },
-    {
-      "role": "user",
-      "content": "Votre frère ? Il vit ici aussi ? Où sont ses domestiques ?"
-    },
-    {
-      "role": "assistant",
-      "content": "Célestin est tailleur, pas noble — ses domestiques n'existent pas, son atelier non plus depuis l'incendie. Profitez du vin et bonsoir."
-    },
-    {
-      "role": "assistant",
-      "tool_calls": [
-        {
-          "type": "function",
-          "function": {
-            "name": "close_conversation",
-            "arguments": {}
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "name": "close_conversation",
-      "content": "{\"success\": true}"
+      "content": "Quatre pièces, chevalier. Votre titre ne change pas le prix."
     }
   ],
   "tools": [
     {
       "type": "function",
       "function": {
-        "name": "inspect_player",
-        "description": "Observer et évaluer l'apparence et l'attitude du joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "list_menu",
-        "description": "Lister les boissons, plats et chambres disponibles.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
-      }
-    },
-    {
-      "type": "function",
-      "function": {
-        "name": "serve_drink",
-        "description": "Servir une boisson au joueur.",
+        "name": "sell_drink",
+        "description": "Vendre une boisson au joueur en échange de pièces.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            },
+            "price": {
+              "type": "number",
+              "description": "Le prix en pièces."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name",
+            "price"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "serve_food",
-        "description": "Servir un plat au joueur.",
+        "name": "give_drink",
+        "description": "Donner une boisson gratuitement au joueur.",
         "parameters": {
           "type": "object",
           "properties": {
-            "name": {"type": "string"},
-            "price": {"type": "number"}
+            "name": {
+              "type": "string",
+              "description": "Le nom de la boisson."
+            }
           },
-          "required": ["name", "price"]
+          "required": [
+            "name"
+          ]
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "rent_room",
-        "description": "Louer une chambre au joueur pour la nuit.",
+        "name": "list_drinks",
+        "description": "Lister les boissons disponibles à la taverne.",
         "parameters": {
           "type": "object",
-          "properties": {
-            "price": {"type": "number"}
-          },
-          "required": ["price"]
+          "properties": {},
+          "required": []
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "close_conversation",
-        "description": "Clore la conversation avec le joueur.",
-        "parameters": {"type": "object", "properties": {}, "required": []}
+        "name": "list_info",
+        "description": "Lister les informations disponibles sur Edgar et la taverne.",
+        "parameters": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "sell_info",
+        "description": "Vendre une information ou un renseignement au joueur en échange de pièces.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "price": {
+              "type": "number",
+              "description": "Le prix de l'information en pièces."
+            }
+          },
+          "required": [
+            "price"
+          ]
+        }
       }
     }
   ]
