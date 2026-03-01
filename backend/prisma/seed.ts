@@ -328,10 +328,10 @@ const NPCS: Array<{
     lastName: "de Cormeil",
     prefab: "TavernKeeperTemplate",
     voiceId: "zNsotODqUhvbJ5wMG7Ei",
-    spawnX: 0.0, // TODO_SPAWN: set real Unity world position
-    spawnY: 0.0,
-    spawnZ: 0.0,
-    spawnRotation: 0.0,
+    spawnX: 16.06, 
+    spawnY: 1.0,
+    spawnZ: -7.78,
+    spawnRotation: -30.0,
     characterPrompt:
       "Tu es Célestin de Cormeil, ancien marchand itinérant installé temporairement dans la taverne de ton frère Edgar suite à l'incendie de ta chaumière. " +
       "Tu vends tes marchandises depuis un coin de la salle. " +
@@ -356,10 +356,10 @@ const NPCS: Array<{
     lastName: "de Cormeil",
     prefab: "TraderTemplate",
     voiceId: "wWWn96OtTHu1sn8SRGEr",
-    spawnX: 0.0, // TODO_SPAWN: set real Unity world position
-    spawnY: 0.0,
-    spawnZ: 0.0,
-    spawnRotation: 0.0,
+    spawnX: 42.6, 
+    spawnY: 1.0,
+    spawnZ: 4.40,
+    spawnRotation: -90.0,
     characterPrompt:
       "Tu es Edgar de Cormeil, tavernier du village de Cormeil. " +
       "Tu héberges actuellement ton frère Célestin depuis que sa chaumière a brûlé. " +
@@ -374,10 +374,10 @@ const NPCS: Array<{
     lastName: "de la Barre",
     prefab: "GhostPrefab",
     voiceId: "bgU7lBMo69PNEOWHFqxM",
-    spawnX: 0.0, // TODO_SPAWN: set real Unity world position
-    spawnY: 0.0,
-    spawnZ: 0.0,
-    spawnRotation: 0.0,
+    spawnX: 20.0, 
+    spawnY: 2.4,
+    spawnZ: 11.6,
+    spawnRotation: 180.0,
     characterPrompt:
       "Tu es Guenièvre 'La Grosse' de la Barre, ancienne fermière décédée tragiquement en confondant la main de son mari avec un cactus lors d'un voyage. " +
       "Revenue sous forme de fantôme, tu hantes désormais le village de tes bruits incessants, de tes complaintes sur la fermeture forcée de ta boutique de conserves, " +
@@ -393,10 +393,10 @@ const NPCS: Array<{
     lastName: "Mao",
     prefab: "ApothecaryTemplate",
     voiceId: "l4Coq6695JDX9xtLqXDE",
-    spawnX: 0.0, // TODO_SPAWN: set real Unity world position
-    spawnY: 0.0,
-    spawnZ: 0.0,
-    spawnRotation: 0.0,
+    spawnX: -7.28, 
+    spawnY: 1.0,
+    spawnZ: 3.9,
+    spawnRotation: 110.0,
     characterPrompt:
       "Tu es Mao Mao, une apothicaire passionnée par les poisons et les remèdes. " +
       "Tu es pragmatique, observatrice, souvent sarcastique et peu intéressée par les drames de la cour, " +
