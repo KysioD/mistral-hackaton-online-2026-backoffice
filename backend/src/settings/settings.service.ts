@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { IsOptional, IsString } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface AppSettings {
@@ -10,10 +11,24 @@ export interface AppSettings {
 }
 
 export class UpdateSettingsDto implements Partial<AppSettings> {
+  @IsOptional()
+  @IsString()
   MISTRAL_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
   LLM_MODEL?: string;
+
+  @IsOptional()
+  @IsString()
   ELEVENLABS_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
   ELEVENLABS_VOICE_ID?: string;
+
+  @IsOptional()
+  @IsString()
   VOXTRAL_MODEL?: string;
 }
 

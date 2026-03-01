@@ -33,7 +33,7 @@ const FIELDS: FieldConfig[] = [
   {
     key: "LLM_MODEL",
     label: "LLM Model",
-    placeholder: "e.g. ministral-8b-latest",
+    placeholder: "e.g. ministral-14b-latest",
     isSecret: false,
     icon: <Cpu className="h-4 w-4" />,
     description: "Mistral model used for NPC conversation generation.",
@@ -74,60 +74,72 @@ export function SettingsTab() {
   });
 
   const [formValues, setFormValues] = useState<Partial<AppSettings>>({});
-  const formValuesRef = useRef<Partial<AppSettings>>({});
   const [showSecret, setShowSecret] = useState<Record<string, boolean>>({});
   const initialized = useRef(false);
 
-  // Populate form only once on first load — never overwrite user edits
+  // Populate form only once on first load
   useEffect(() => {
+    console.log("[Settings] data from server:", data, "initialized:", initialized.current);
     if (data && !initialized.current) {
+      console.log("[Settings] initializing form with:", data);
       setFormValues({ ...data });
-      formValuesRef.current = { ...data };
       initialized.current = true;
     }
   }, [data]);
 
   const handleChange = (key: keyof AppSettings, value: string) => {
+    console.log("[Settings] handleChange", key, "=", value);
     setFormValues((prev) => {
       const next = { ...prev, [key]: value };
-      formValuesRef.current = next;
+      console.log("[Settings] formValues after change:", next);
       return next;
     });
   };
 
-  // When user starts editing a secret field that still holds the mask, clear it first
   const handleSecretFocus = (key: keyof AppSettings) => {
-    if (formValuesRef.current[key] === MASK) {
-      handleChange(key, "");
-    }
+    console.log("[Settings] handleSecretFocus", key, "current value:", formValues[key]);
+    setFormValues((prev) => {
+      if (prev[key] === MASK) {
+        console.log("[Settings] clearing mask for", key);
+        return { ...prev, [key]: "" };
+      }
+      return prev;
+    });
   };
+
   const { mutate: save, isPending } = useMutation({
-    mutationFn: updateSettings,
+    mutationFn: (patch: Partial<AppSettings>) => {
+      console.log("[Settings] sending PATCH to API:", JSON.stringify(patch));
+      return updateSettings(patch);
+    },
     onSuccess: (updated) => {
+      console.log("[Settings] save success, server returned:", updated);
       queryClient.setQueryData(["settings"], updated);
-      // Only re-sync secret fields (they become masked after save); leave other fields as the user typed them
       setFormValues((prev) => {
-        const next = { ...prev };
-        for (const key of (["MISTRAL_API_KEY", "ELEVENLABS_API_KEY"] as const)) {
-          next[key] = updated[key];
-        }
-        formValuesRef.current = next;
+        const next = {
+          ...prev,
+          MISTRAL_API_KEY: updated.MISTRAL_API_KEY,
+          ELEVENLABS_API_KEY: updated.ELEVENLABS_API_KEY,
+        };
+        console.log("[Settings] formValues after save:", next);
         return next;
       });
       toast({ title: "Settings saved", description: "Changes applied immediately." });
     },
-    onError: () => {
+    onError: (err) => {
+      console.error("[Settings] save error:", err);
       toast({ title: "Failed to save settings", variant: "destructive" });
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[Settings] handleSubmit — formValues at submit time:", formValues);
     const patch: Partial<AppSettings> = {};
     for (const field of FIELDS) {
-      const val = formValuesRef.current[field.key] ?? "";
-      patch[field.key] = val;
+      patch[field.key] = formValues[field.key] ?? "";
     }
+    console.log("[Settings] patch being sent:", patch);
     save(patch);
   };
 

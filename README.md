@@ -90,7 +90,7 @@ Copy `.env.example` to `.env` (or create `.env`) and fill in the required values
 ```env
 # Mistral AI — required
 MISTRAL_API_KEY=your_mistral_api_key
-LLM_MODEL=ministral-8b-latest          # default
+LLM_MODEL=ministral-14b-latest          # default
 
 # Voxtral real-time transcription — required for voice
 VOXTRAL_MODEL=voxtral-mini-transcribe-realtime-2602   # default

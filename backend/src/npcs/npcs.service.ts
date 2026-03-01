@@ -386,7 +386,7 @@ export class NpcsService {
     });
 
     let model = new ChatMistralAI({
-      model: process.env.LLM_MODEL || 'ministral-8b-latest',
+      model: process.env.LLM_MODEL || 'ministral-14b-latest',
       temperature: 0.7,
     });
 
