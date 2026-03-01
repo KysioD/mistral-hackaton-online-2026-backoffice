@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ChevronsUpDown, Trash2, Users, Edit2, Search, Plus, X } from "lucide-react";
+import { Check, ChevronsUpDown, Trash2, Users, Edit2, Search, Plus, X, ClipboardPaste } from "lucide-react";
 import { useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,8 +16,9 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useDebounce } from "@/hooks/use-debounce";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Copy } from "lucide-react";
+import { Copy, ChevronDown, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import TextareaAutosize from 'react-textarea-autosize';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const npcSchema = z.object({
   firstName: z.string().min(1, "First name requried"),
@@ -40,6 +43,16 @@ const npcSchema = z.object({
   spawnRotation: z.coerce.number().default(0),
   characterPrompt: z.string().min(1, "Prompt instructions required"),
   toolNames: z.array(z.string()).default([]),
+  conversationExamples: z.array(
+    z.object({
+      messages: z.array(
+        z.object({
+          role: z.string(),
+          content: z.string()
+        })
+      )
+    })
+  ).default([])
 });
 
 type NpcFormValues = z.infer<typeof npcSchema>;
@@ -142,6 +155,199 @@ function CreateToolDialog({ open, onOpenChange, onToolCreated }: { open: boolean
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ConversationExamplesEditor({ control, register }: { control: any; register: any }) {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "conversationExamples"
+  });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center bg-muted/30 p-2 rounded">
+        <h3 className="font-semibold text-sm">Conversation Examples for RAG</h3>
+        <div className="flex space-x-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={async () => {
+              try {
+                const text = await navigator.clipboard.readText();
+                const rawJson = JSON.parse(text);
+                
+                // Helper to format roles correctly (e.g. "user" -> "USER")
+                // And to stringify nested tool content/objects
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const formatMessage = (msg: any) => {
+                  let formattedRole = msg.role ? msg.role.toUpperCase() : "USER";
+                  if (!["USER", "ASSISTANT", "SYSTEM", "TOOL"].includes(formattedRole)) {
+                    formattedRole = "USER";
+                  }
+                  
+                  let content = msg.content || "";
+                  if (typeof content !== 'string') {
+                    content = JSON.stringify(content, null, 2);
+                  }
+                  
+                  return { role: formattedRole, content };
+                };
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const formatMessagesArray = (msgs: any[]) => msgs.map(formatMessage);
+
+                if (Array.isArray(rawJson)) {
+                  // Check if it's an array of examples [{messages: [...]}] or just one example of messages [...]
+                  if (rawJson.length > 0 && rawJson[0].messages) {
+                    // It's an array of example objects
+                    rawJson.forEach(ex => append({ messages: formatMessagesArray(ex.messages) }));
+                  } else {
+                    // Assume it's a single array of message objects (e.g., direct paste of the array)
+                    append({ messages: formatMessagesArray(rawJson) });
+                  }
+                } else if (rawJson && rawJson.messages && Array.isArray(rawJson.messages)) {
+                    // It's a single example object (e.g., {"messages": [...]})
+                    append({ messages: formatMessagesArray(rawJson.messages) });
+                } else {
+                  alert("Pasted JSON format not recognized. Expected an array of messages.");
+                }
+              } catch (e) {
+                alert("Failed to parse clipboard. Make sure you copied valid JSON.");
+                console.error(e);
+              }
+            }}
+          >
+            <ClipboardPaste className="mr-2 h-4 w-4" /> Paste JSON
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={() => append({ 
+              messages: [
+                { role: "USER", content: "Hello there!" },
+                { role: "ASSISTANT", content: "Greetings, traveler." }
+              ] 
+            })}
+          >
+            <Plus className="mr-2 h-4 w-4" /> Add Example
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {fields.map((field, exampleIndex) => {
+          const isExpanded = expanded[field.id] === true; // Default to collapsed
+          return (
+            <div key={field.id} className="border rounded-md relative bg-card/50">
+              <div 
+                className="flex items-center justify-between p-3 border-b cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setExpanded(prev => ({ ...prev, [field.id]: !isExpanded }))}
+              >
+                <div className="flex items-center">
+                  {isExpanded ? <ChevronDown className="h-4 w-4 mr-2" /> : <ChevronRight className="h-4 w-4 mr-2" />}
+                  <h4 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
+                    Example {exampleIndex + 1}
+                  </h4>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    remove(exampleIndex);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {isExpanded && (
+                <div className="p-4">
+                  <MessageListEditor control={control} register={register} exampleIndex={exampleIndex} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {fields.length === 0 && (
+          <div className="text-center p-8 text-muted-foreground text-sm border border-dashed rounded-lg">
+            No examples added yet. Add a conversation example to improve the NPC&apos;s conversational ability using RAG.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function MessageListEditor({ control, register, exampleIndex }: { control: any; register: any; exampleIndex: number }) {
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: `conversationExamples.${exampleIndex}.messages`
+  });
+
+  return (
+    <div className="space-y-3">
+      {fields.map((msgField, msgIndex) => (
+        <div key={msgField.id} className="flex gap-2">
+          <div className="w-[120px] shrink-0">
+            <Controller
+              control={control}
+              name={`conversationExamples.${exampleIndex}.messages.${msgIndex}.role`}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USER">USER</SelectItem>
+                    <SelectItem value="ASSISTANT">ASSISTANT</SelectItem>
+                    <SelectItem value="SYSTEM">SYSTEM</SelectItem>
+                    <SelectItem value="TOOL">TOOL</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+          <div className="flex-1 relative">
+            <TextareaAutosize 
+              {...register(`conversationExamples.${exampleIndex}.messages.${msgIndex}.content`)}
+              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 min-h-[40px] resize-none" 
+              placeholder="Message content..." 
+              minRows={2}
+              maxRows={20}
+            />
+            {fields.length > 1 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1 h-6 w-6 text-muted-foreground hover:text-destructive"
+                onClick={() => remove(msgIndex)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      ))}
+      <Button 
+        type="button" 
+        variant="ghost" 
+        size="sm" 
+        className="w-full mt-2 border border-dashed"
+        onClick={() => append({ role: "USER", content: "" })}
+      >
+        <Plus className="mr-2 h-4 w-4" /> Add Message Context
+      </Button>
+    </div>
+  );
+}
+
 export function NpcsTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -189,12 +395,13 @@ export function NpcsTab() {
     defaultValues: { 
       firstName: "", lastName: "", prefab: "Villager", 
       spawnX: 0, spawnY: 0, spawnZ: 0, spawnRotation: 0, characterPrompt: "",
-      toolNames: []
+      toolNames: [],
+      conversationExamples: []
     },
   });
 
   const resetForm = () => {
-    form.reset({ firstName: "", lastName: "", prefab: "Villager", spawnX: 0, spawnY: 0, spawnZ: 0, spawnRotation: 0, characterPrompt: "", toolNames: [] });
+    form.reset({ firstName: "", lastName: "", prefab: "Villager", spawnX: 0, spawnY: 0, spawnZ: 0, spawnRotation: 0, characterPrompt: "", toolNames: [], conversationExamples: [] });
     setEditingNpc(null);
   };
 
@@ -204,13 +411,32 @@ export function NpcsTab() {
       firstName: npc.firstName, lastName: npc.lastName, prefab: npc.prefab,
       spawnX: npc.spawnX, spawnY: npc.spawnY, spawnZ: npc.spawnZ, spawnRotation: npc.spawnRotation,
       characterPrompt: npc.characterPrompt,
-      toolNames: npc.tools ? npc.tools.map((t) => t.tool.name) : []
+      toolNames: npc.tools ? npc.tools.map((t) => t.tool.name) : [],
+      conversationExamples: npc.conversationExamples
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ? npc.conversationExamples.map((ex: any) => ({
+            // The backend sends messages as Prisma JSON, which might still be stringified,
+            // or directly as an array depending on how it was saved.
+            messages: Array.isArray(ex.messages)
+              ? ex.messages 
+              : (typeof ex.messages === 'string' ? JSON.parse(ex.messages) : [])
+          }))
+        : []
     });
     setIsDialogOpen(true);
   };
 
   const saveMutation = useMutation({
-    mutationFn: (data: NpcFormValues) => editingNpc ? updateNpc(editingNpc.id, data) : createNpc(data),
+    mutationFn: (data: NpcFormValues) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const payload: any = {
+        ...data,
+      };
+      if (data.conversationExamples) {
+        payload.conversationExamples = data.conversationExamples.map(ex => ex.messages);
+      }
+      return editingNpc ? updateNpc(editingNpc.id, payload) : createNpc(payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["npcs"] });
       toast({ title: "Success", description: `NPC ${editingNpc ? "updated" : "created"}.` });
@@ -300,7 +526,14 @@ export function NpcsTab() {
               <DialogHeader><DialogTitle>{editingNpc ? "Edit NPC" : "Create NPC"}</DialogTitle></DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit((d) => saveMutation.mutate(d))} className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
+                  <Tabs defaultValue="general" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="general">General Info</TabsTrigger>
+                      <TabsTrigger value="examples">Conversation Examples RAG</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="general" className="space-y-6 pt-4">
+                      <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="firstName" render={({ field }) => (
                       <FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="John" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
@@ -443,6 +676,12 @@ export function NpcsTab() {
                       </FormItem>
                     )}
                   />
+                    </TabsContent>
+                    
+                    <TabsContent value="examples" className="pt-4">
+                      <ConversationExamplesEditor control={form.control} register={form.register} />
+                    </TabsContent>
+                  </Tabs>
 
                   <div className="flex justify-end pt-4">
                     <Button type="submit" disabled={saveMutation.isPending}>{saveMutation.isPending ? "Saving..." : "Save NPC"}</Button>

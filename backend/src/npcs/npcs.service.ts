@@ -1,15 +1,20 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateNpcDto, UpdateNpcDto, TalkDto } from './dto/npc.dto';
-import { ChatMistralAI } from "@langchain/mistralai";
+import { ChatMistralAI, MistralAIEmbeddings } from "@langchain/mistralai";
 import { SystemMessage, HumanMessage, AIMessage, ToolMessage } from "@langchain/core/messages";
+import * as crypto from 'crypto';
 
 @Injectable()
 export class NpcsService {
+  private embeddings = new MistralAIEmbeddings({
+    model: 'mistral-embed',
+  });
+
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createNpcDto: CreateNpcDto) {
-    const { toolNames, ...npcData } = createNpcDto;
+    const { toolNames, conversationExamples, ...npcData } = createNpcDto;
 
     let validToolIds: string[] = [];
 
@@ -33,7 +38,7 @@ export class NpcsService {
       }
     }
 
-    return this.prisma.npc.create({
+    const createdNpc = await this.prisma.npc.create({
       data: {
         ...npcData,
         ...(toolNames &&
@@ -51,6 +56,12 @@ export class NpcsService {
         },
       },
     });
+
+    if (conversationExamples && conversationExamples.length > 0) {
+      await this._handleConversationExamples(createdNpc.id, conversationExamples);
+    }
+
+    return createdNpc;
   }
 
   async findAll(page: number = 1, perPage: number = 10, search?: string) {
@@ -80,6 +91,9 @@ export class NpcsService {
               tool: true,
             },
           },
+          conversationExamples: {
+            select: { id: true, messages: true }
+          }
         },
         orderBy: { updatedAt: 'desc' },
       }),
@@ -106,12 +120,15 @@ export class NpcsService {
             tool: true,
           },
         },
+        conversationExamples: {
+          select: { id: true, messages: true }
+        }
       },
     });
   }
 
   async update(id: string, updateNpcDto: UpdateNpcDto) {
-    const { toolNames, ...npcData } = updateNpcDto;
+    const { toolNames, conversationExamples, ...npcData } = updateNpcDto;
 
     let validToolIds: string[] = [];
 
@@ -135,7 +152,7 @@ export class NpcsService {
       }
     }
 
-    return this.prisma.$transaction(async (prisma) => {
+    const result = await this.prisma.$transaction(async (prisma) => {
       if (toolNames !== undefined) {
         // If toolNames is provided, we overwrite the tools
         // First delete existing tools
@@ -162,6 +179,31 @@ export class NpcsService {
         },
       });
     });
+
+    if (conversationExamples !== undefined) {
+      await this._handleConversationExamples(id, conversationExamples);
+    }
+
+    return result;
+  }
+
+  private async _handleConversationExamples(npcId: string, examples: any[]) {
+    await this.prisma.conversationExample.deleteMany({ where: { npcId } });
+    
+    if (!examples || examples.length === 0) return;
+
+    for (const example of examples) {
+      // Create embedding of the whole example to capture full context
+      const exampleText = typeof example === 'string' ? example : JSON.stringify(example);
+      const vector = await this.embeddings.embedQuery(exampleText);
+      const vectorString = `[${vector.join(',')}]`;
+      const id = crypto.randomUUID();
+      
+      await this.prisma.$executeRaw`
+        INSERT INTO "ConversationExample" ("id", "npcId", "messages", "embedding", "updatedAt")
+        VALUES (${id}, ${npcId}, ${JSON.stringify(example)}::jsonb, ${vectorString}::vector, NOW())
+      `;
+    }
   }
 
   async remove(id: string) {
@@ -298,7 +340,7 @@ export class NpcsService {
     });
 
     let model = new ChatMistralAI({
-      model: 'ministral-8b-latest',
+      model: process.env.LLM_MODEL || 'ministral-8b-latest',
       temperature: 0.7,
     });
 
@@ -307,8 +349,43 @@ export class NpcsService {
       model = model.bindTools(mistralTools) as any;
     }
 
+    const recentMessagesText = history.slice(-5)
+      .map(m => `${m.role}: ${m.content}`)
+      .join('\n');
+
+    let topExamples: any[] = [];
+    if (recentMessagesText.trim()) {
+      const queryVector = await this.embeddings.embedQuery(recentMessagesText);
+      const queryVectorString = `[${queryVector.join(',')}]`;
+      
+      topExamples = await this.prisma.$queryRaw`
+        SELECT id, messages
+        FROM "ConversationExample"
+        WHERE "npcId" = ${id}
+        ORDER BY "embedding" <=> ${queryVectorString}::vector
+        LIMIT 3
+      ` as any[];
+    }
+
     const lcMessages: any[] = history.map((msg, index) => {
-      if (msg.role === 'SYSTEM') return new SystemMessage(msg.content);
+      if (msg.role === 'SYSTEM') {
+        let fullSystemPrompt = msg.content;
+        if (topExamples.length > 0) {
+          fullSystemPrompt += '\n\n--- Past conversation examples for reference ---\n';
+          topExamples.forEach((ex, i) => {
+            fullSystemPrompt += `\nExample ${i + 1}:\n`;
+            try {
+              // try to parse or format the messages nicely
+              const msgs = typeof ex.messages === 'string' ? JSON.parse(ex.messages) : ex.messages;
+              fullSystemPrompt += JSON.stringify(msgs, null, 2);
+            } catch (e) {
+              fullSystemPrompt += JSON.stringify(ex.messages);
+            }
+            fullSystemPrompt += '\n';
+          });
+        }
+        return new SystemMessage(fullSystemPrompt);
+      }
       if (msg.role === 'USER') {
         let content = msg.content;
         // Inject a prompt reminder to the very last user message

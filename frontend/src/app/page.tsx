@@ -1,11 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NpcsTab } from "@/components/tabs/npcs-tab";
 import { ToolsTab } from "@/components/tabs/tools-tab";
 import { SystemPromptsTab } from "@/components/tabs/system-prompts-tab";
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <main className="container mx-auto p-8 pt-12 max-w-6xl min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </main>
+    );
+  }
+
   return (
     <main className="container mx-auto p-8 pt-12 max-w-6xl">
       <div className="flex flex-col space-y-2 mb-10">

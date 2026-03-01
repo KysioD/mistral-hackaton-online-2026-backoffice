@@ -48,6 +48,10 @@ export class CreateNpcDto {
   @IsArray()
   @IsString({ each: true })
   toolNames?: string[];
+
+  @IsOptional()
+  @IsArray()
+  conversationExamples?: any[];
 }
 
 export class UpdateNpcDto {
@@ -95,6 +99,10 @@ export class UpdateNpcDto {
   @IsArray()
   @IsString({ each: true })
   toolNames?: string[];
+
+  @IsOptional()
+  @IsArray()
+  conversationExamples?: any[];
 }
 export class TalkDto {
   @IsNotEmpty()

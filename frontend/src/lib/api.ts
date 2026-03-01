@@ -18,6 +18,8 @@ export interface Npc {
   spawnRotation: number;
   characterPrompt: string;
   tools: { toolId: string; npcId: string; tool: Tool }[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  conversationExamples?: { id: string; messages: any[] }[];
 }
 
 export interface Tool {
