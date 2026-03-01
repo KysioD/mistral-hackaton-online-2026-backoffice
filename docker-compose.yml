@@ -20,6 +20,9 @@ services:
   #   environment:
   #     DATABASE_URL: "postgresql://prisma:password@postgres:5432/mistral_backoffice_db?schema=public"
   #     LLM_MODEL: ${LLM_MODEL:-ministral-8b-latest}
+  #     MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+  #   command: >
+  #     sh -c "npx prisma migrate deploy && npm run start:dev"
   #   ports:
   #     - '3001:3000'
   #   depends_on:
@@ -34,7 +37,9 @@ services:
   #   ports:
   #     - '3000:3000'
   #   environment:
-  #     NEXT_PUBLIC_API_URL: http://localhost:3001
+  #     NEXT_PUBLIC_API_URL: http://mistral-backend:3000
+  #   depends_on:
+  #     - backend
   #   networks:
   #     - mistral-network
 
