@@ -372,7 +372,7 @@ const NPCS: Array<{
   {
     firstName: "Guenièvre",
     lastName: "de la Barre",
-    prefab: "GhostPrefab",
+    prefab: "GhostTemplate",
     voiceId: "bgU7lBMo69PNEOWHFqxM",
     spawnX: 20.0, 
     spawnY: 2.4,
