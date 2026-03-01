@@ -17,7 +17,9 @@ services:
       ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-}
       VOXTRAL_MODEL: ${VOXTRAL_MODEL:-voxtral-mini-transcribe-realtime-2602}
     command: >
-      sh -c "npx prisma migrate deploy && npx prisma db seed && npm run start:prod"
+      sh -c "npx prisma migrate deploy && ([ -f /data/.seeded ] || (npx prisma db seed && touch /data/.seeded)) && npm run start:prod"
+    volumes:
+      - seed-marker:/data
     ports:
       - '3001:3000'
       - '8076:8080'
@@ -52,3 +54,6 @@ services:
       start_period: 30s
     networks:
       - mistral-network
+
+volumes:
+  seed-marker:
