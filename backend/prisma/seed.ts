@@ -43,27 +43,27 @@ const TOOLS: Array<{
   parameters: Array<{ name: string; description: string; required: boolean }>;
 }> = [
   // ── Shared ──────────────────────────────────────────────────────────────
-  {
-    name: "list_info",
-    description:
-      "Return factual information about the NPC and their current situation " +
-      "(identity, profession, location, relationships, services). " ,
-    parameters: [],
-  },
-  {
-    name: "sell_info",
-    description:
-      "Sell a piece of actionable information to the player in exchange for coins " +
-      "(e.g. trade routes, local secrets, rumours, contacts). " +
-      "Decide the price based on the value of the information before calling.",
-    parameters: [
-      {
-        name: "price",
-        description: "Price of the information in coins (agreed with the player beforehand).",
-        required: true,
-      },
-    ],
-  },
+//   {
+//     name: "list_info",
+//     description:
+//       "Return factual information about the NPC and their current situation " +
+//       "(identity, profession, location, relationships, services). " ,
+//     parameters: [],
+//   },
+//   {
+//     name: "sell_info",
+//     description:
+//       "Sell a piece of actionable information to the player in exchange for coins " +
+//       "(e.g. trade routes, local secrets, rumours, contacts). " +
+//       "Decide the price based on the value of the information before calling.",
+//     parameters: [
+//       {
+//         name: "price",
+//         description: "Price of the information in coins (agreed with the player beforehand).",
+//         required: true,
+//       },
+//     ],
+//   },
 
   // ── Célestin — merchant ──────────────────────────────────────────────────
   {
@@ -202,14 +202,14 @@ const TOOLS: Array<{
   },
 
   // ── Guenièvre — ghost ────────────────────────────────────────────────────
-  {
-    name: "fear",
-    description:
-      "Trigger a ghostly manifestation to frighten the player " +
-      "(ecto­plasmic surge, clanking chains, extinguished candles, frozen wind, wailing, etc.). " +
-      "Use freely whenever the player seems unafraid or disrespectful.",
-    parameters: [],
-  },
+//   {
+//     name: "fear",
+//     description:
+//       "Trigger a ghostly manifestation to frighten the player " +
+//       "(ecto­plasmic surge, clanking chains, extinguished candles, frozen wind, wailing, etc.). " +
+//       "Use freely whenever the player seems unafraid or disrespectful.",
+//     parameters: [],
+//   },
   {
     name: "list_player_coins",
     description:
@@ -338,8 +338,6 @@ const NPCS: Array<{
       "You know trade routes and commerce well. " +
       "Your responses must be concise (3 sentences maximum) and reflect your merchant and resourceful nature.",
     toolNames: [
-      "list_info",
-      "sell_info",
       "list_items",
       "sell_item",
       "buy_item",
@@ -365,7 +363,7 @@ const NPCS: Array<{
       "You deeply despise adventurers: loud, rude, dangerous, and bad for the reputation of a respectable establishment. " +
       "You serve them anyway because coin is coin, but you make no secret of your contempt. " +
       "Your responses must be concise (3 sentences maximum) and reflect your gruff, surly nature.",
-    toolNames: ["list_info", "sell_info", "list_drinks", "sell_drink", "give_drink"],
+    toolNames: ["list_drinks", "sell_drink", "give_drink"],
     datasetFolder: "edgar",
   },
   {
@@ -384,7 +382,7 @@ const NPCS: Array<{
       "You are loud, whiny and sometimes clumsy, but fundamentally harmless — " +
       "your main goals are to frighten people, steal a few coins, and remind everyone that cacti are dangerous. " +
       "Your responses must be concise (3 sentences maximum) and reflect your ghostly, mournful and cactus-obsessed nature.",
-    toolNames: ["list_info", "fear", "list_player_coins", "steal_coin"],
+    toolNames: ["list_info", "list_player_coins", "steal_coin"],
     datasetFolder: "guenivre",
   },
   {
