@@ -392,7 +392,7 @@ const NPCS: Array<{
     firstName: "Mao",
     lastName: "Mao",
     prefab: "ApothecaryTemplate",
-    voiceId: "F1toM6PcP54s45kOOAyV",
+    voiceId: "gidGFDFyCSnGFnZ9hK7l",
     spawnX: 0.0, // TODO_SPAWN: set real Unity world position
     spawnY: 0.0,
     spawnZ: 0.0,
