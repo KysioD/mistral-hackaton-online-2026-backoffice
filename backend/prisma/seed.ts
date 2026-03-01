@@ -327,7 +327,7 @@ const NPCS: Array<{
     firstName: "Célestin",
     lastName: "de Cormeil",
     prefab: "TavernKeeperTemplate",
-    voiceId: "IbbR6Av0dWuQJS0b8JVT",
+    voiceId: "zNsotODqUhvbJ5wMG7Ei",
     spawnX: 0.0, // TODO_SPAWN: set real Unity world position
     spawnY: 0.0,
     spawnZ: 0.0,
@@ -355,7 +355,7 @@ const NPCS: Array<{
     firstName: "Edgar",
     lastName: "de Cormeil",
     prefab: "TraderTemplate",
-    voiceId: "4hYlhKO9gzckfpMgfFKJ",
+    voiceId: "wWWn96OtTHu1sn8SRGEr",
     spawnX: 0.0, // TODO_SPAWN: set real Unity world position
     spawnY: 0.0,
     spawnZ: 0.0,
@@ -373,7 +373,7 @@ const NPCS: Array<{
     firstName: "Guenièvre",
     lastName: "de la Barre",
     prefab: "GhostPrefab",
-    voiceId: "fBpCO0Kf0krKLYGOu65w",
+    voiceId: "bgU7lBMo69PNEOWHFqxM",
     spawnX: 0.0, // TODO_SPAWN: set real Unity world position
     spawnY: 0.0,
     spawnZ: 0.0,
@@ -392,7 +392,7 @@ const NPCS: Array<{
     firstName: "Mao",
     lastName: "Mao",
     prefab: "ApothecaryTemplate",
-    voiceId: "gidGFDFyCSnGFnZ9hK7l",
+    voiceId: "l4Coq6695JDX9xtLqXDE",
     spawnX: 0.0, // TODO_SPAWN: set real Unity world position
     spawnY: 0.0,
     spawnZ: 0.0,
